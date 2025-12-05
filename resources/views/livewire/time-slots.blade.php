@@ -5,8 +5,13 @@
                 <h5 class="mb-0">Select Date</h5>
             </div>
             <div class="card-body">
-                <input type="date" class="form-control" wire:model="date"
-                    wire:change="selectDate($event.target.value, {{ $meetingRoom->id }})">
+                <input type="date" class="form-control" 
+                    min="{{ request()->sdate }}"
+                    max="{{ request()->edate }}"
+                    {{-- value="{{ now()->format('Y-m-d') }}" --}}
+                    wire:model="date"
+                    wire:change="selectDate($event.target.value, {{ $meetingRoom->id }})"
+                >
             </div>
         </div>
     </div>

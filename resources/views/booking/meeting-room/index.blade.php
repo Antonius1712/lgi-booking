@@ -63,7 +63,11 @@
         <div class="col-4 mb-4">
             <div class="card">
                 <div class="card-header">
-                        <a href="{{ route('booking.meeting-room.show', str($room)->slug()) }}">
+                        <a href="{{ route('booking.meeting-room.show', [
+                            'meeting_room' => str($room)->slug(),
+                            'sdate' => request()->sdate,
+                            'edate' => request()->edate
+                        ]) }}">
                         <h4>
                             <i class="icon-base bx bx-building"></i>
                             {{ $room }}
