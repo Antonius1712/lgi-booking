@@ -9,12 +9,19 @@ use Livewire\Component;
 class TimeSlots extends Component
 {
     public array $timeRanges = [];
+
     public array $bookedSlots = [];
+
     public array $selectedSlot = [];
+
     public bool $isBooked = false;
+
     public $meetingRoom = null;
+
     public array $timeSlots = [];
+
     public string $date = '';
+
     public string $error = '';
 
     public function mount($meetingRoom)
@@ -42,7 +49,7 @@ class TimeSlots extends Component
             while ($current < $end) {
                 $next = $current->copy()->addHour();
 
-                $slots[] = $current->format('H:i') . ' - ' . $next->format('H:i');
+                $slots[] = $current->format('H:i').' - '.$next->format('H:i');
 
                 $current = $next;
             }
@@ -59,7 +66,7 @@ class TimeSlots extends Component
         $start = explode(' - ', $this->timeSlots[0])[0];
         $end = explode(' - ', $this->timeSlots[count($this->timeSlots) - 1])[1];
 
-        $slot = $start . ' - ' . $end;
+        $slot = $start.' - '.$end;
         // dd($slot);
         Booking::create([
             'meeting_room_id' => $meetingRoomId,
@@ -85,7 +92,7 @@ class TimeSlots extends Component
 
     public function checkValidConsecutive()
     {
-        if (!$this->isConsecutive($this->timeSlots)) {
+        if (! $this->isConsecutive($this->timeSlots)) {
             // Find where the break happens and keep only valid consecutive slots
             $validSlots = $this->findValidConsecutiveSlots($this->timeSlots);
 
@@ -116,7 +123,7 @@ class TimeSlots extends Component
         for ($hour = 8; $hour < 17; $hour++) {
             $start = today()->setTime($hour, 0);
             $end = $start->copy()->addHour();
-            $timeRanges[] = $start->format('H:i') . ' - ' . $end->format('H:i');
+            $timeRanges[] = $start->format('H:i').' - '.$end->format('H:i');
         }
 
         return $timeRanges;
@@ -135,11 +142,11 @@ class TimeSlots extends Component
             [$start1, $end1] = explode('-', $slots[$i]);
             [$start2, $end2] = explode('-', $slots[$i + 1]);
 
-            $end1  = Carbon::parse(trim($end1));
+            $end1 = Carbon::parse(trim($end1));
             $start2 = Carbon::parse(trim($start2));
 
             // If end time of slot N is not equal to start time of slot N+1 → invalid
-            if (!$end1->equalTo($start2)) {
+            if (! $end1->equalTo($start2)) {
                 return false;
             }
         }

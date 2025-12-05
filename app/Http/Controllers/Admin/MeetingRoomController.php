@@ -19,6 +19,7 @@ class MeetingRoomController extends Controller
     public function index()
     {
         $meetingRooms = MeetingRoom::with('location')->get();
+
         return view('admin.meeting-room.index', compact('meetingRooms'));
     }
 
@@ -28,6 +29,7 @@ class MeetingRoomController extends Controller
     public function create()
     {
         $locations = Location::pluck('name', 'id');
+
         return view('admin.meeting-room.create', compact('locations'));
     }
 
@@ -56,6 +58,7 @@ class MeetingRoomController extends Controller
     public function edit(MeetingRoom $meetingRoom)
     {
         $locations = Location::pluck('name', 'id');
+
         return view('admin.meeting-room.edit', compact('locations', 'meetingRoom'));
     }
 
@@ -65,6 +68,7 @@ class MeetingRoomController extends Controller
     public function update(MeetingRoomUpdateRequest $request, MeetingRoom $meetingRoom, MeetingRoomUpdateAction $action)
     {
         $action->handle($meetingRoom, $request);
+
         return to_route('admin.meeting-rooms.index')
             ->with('success', 'Meeting Room updated successfully.');
     }
@@ -75,6 +79,7 @@ class MeetingRoomController extends Controller
     public function destroy(MeetingRoom $meetingRoom, MeetingRoomDestroyAction $action)
     {
         $action->handle($meetingRoom);
+
         return to_route('admin.meeting-rooms.index')
             ->with('success', 'Meeting Room deleted successfully.');
     }
