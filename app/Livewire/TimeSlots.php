@@ -24,6 +24,12 @@ class TimeSlots extends Component
 
     public string $error = '';
 
+    public function updatedTimeSlots()
+    {
+        // This runs AUTOMATICALLY whenever $timeSlots changes
+        $this->checkValidConsecutive();
+    }
+
     public function mount($meetingRoom)
     {
         $this->timeRanges = $this->timeRange();
@@ -92,16 +98,10 @@ class TimeSlots extends Component
 
     public function checkValidConsecutive()
     {
-        if (! $this->isConsecutive($this->timeSlots)) {
-            // Find where the break happens and keep only valid consecutive slots
+        if ($this->isConsecutive($this->timeSlots)) {
             $validSlots = $this->findValidConsecutiveSlots($this->timeSlots);
-
-            // Keep only the valid consecutive slots
             $this->timeSlots = $validSlots;
-            $this->error = 'Time slots must be consecutive. Slots after the gap have been removed.';
-            $this->dispatch('show-error', ['message' => $this->error]);
-        } else {
-            $this->error = ''; // Clear error if valid
+            $this->dispatch('show-error', ['message' => 'Time slots must be consecutive. Slots after the gap have been removed.']);
         }
     }
 
@@ -132,7 +132,7 @@ class TimeSlots extends Component
     private function isConsecutive($slots)
     {
         if (count($slots) <= 1) {
-            return true; // always valid
+            return false; // always valid
         }
 
         // normalize array to ensure order
@@ -147,11 +147,11 @@ class TimeSlots extends Component
 
             // If end time of slot N is not equal to start time of slot N+1 → invalid
             if (! $end1->equalTo($start2)) {
-                return false;
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     private function findValidConsecutiveSlots($slots)

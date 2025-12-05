@@ -10,18 +10,58 @@ class BookingMeetingController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $timeRanges = $this->timeRange();
-        $rooms = MeetingRoom::with('location')->get()
-            ->groupBy(function ($room) {
-                return $room->location->name;
-            })->map(function ($group) {
-                return $group->pluck('name')->toArray();
-            })
-            ->toArray();
+        $sdate = $request->sdate;
+        $edate = $request->edate;
 
-        return view('booking.meeting-room.index', compact('timeRanges', 'rooms'));
+        // Fetch meeting rooms with their bookings within the date range
+        $rooms = MeetingRoom::with(['location', 'booking' => function ($query) use ($sdate, $edate) {
+            $query->whereBetween('booking_date', [$sdate, $edate]);
+        }])->get();
+
+        // Group rooms by location
+        $groupedRooms = $rooms->groupBy(function ($room) {
+            return $room->location->name; // Group by location name
+        });
+
+        // Prepare time slots availability
+        $availability = [];
+        $timeRanges = $this->timeRange();
+
+        foreach ($groupedRooms as $location => $rooms) {
+            foreach ($rooms as $room) {
+                // Initialize availability for each room
+                $availability[$location][$room->name] = [];
+
+                // Loop through each date in the range
+                for ($date = strtotime($sdate); $date <= strtotime($edate); $date = strtotime('+1 day', $date)) {
+                    $dateString = date('Y-m-d', $date);
+                    $availability[$location][$room->name][$dateString] = [];
+
+                    // Check each time range
+                    foreach ($timeRanges as $timeRange) {
+                        [$start, $end] = explode(' - ', $timeRange);
+
+                        // Use the 'any()' method to check for overlapping bookings
+                        $isBooked = $room->booking()->where('booking_date', $dateString)
+                            ->where(function ($query) use ($start, $end) {
+                                $query->where('start_time', '<', $end)
+                                    ->where('end_time', '>', $start);
+                            })->exists(); // Check if there are any overlapping bookings
+
+                        // If not booked, add to availability
+                        if (! $isBooked) {
+                            $availability[$location][$room->name][$dateString][] = $timeRange;
+                        }
+                    }
+                }
+            }
+        }
+
+        // dd($availability);
+
+        return view('booking.meeting-room.index', compact('availability', 'groupedRooms'));
     }
 
     /**
@@ -70,8 +110,17 @@ class BookingMeetingController extends Controller
 
     private function timeRange()
     {
+        // $timeRanges = [];
+        // for ($hour = 0; $hour < 24; $hour++) {
+        //     $start = today()->setTime($hour, 0);
+        //     $end = $start->copy()->addHour();
+        //     $timeRanges[] = $start->format('H:i') . ' - ' . $end->format('H:i');
+        // }
+
+        // return $timeRanges;
+
         $timeRanges = [];
-        for ($hour = 0; $hour < 24; $hour++) {
+        for ($hour = 8; $hour < 17; $hour++) {
             $start = today()->setTime($hour, 0);
             $end = $start->copy()->addHour();
             $timeRanges[] = $start->format('H:i').' - '.$end->format('H:i');
