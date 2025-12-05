@@ -1,13 +1,13 @@
 @extends('layouts.app')
 @section('content')
     <div class="row">
-        @if( auth()->user()->NIK === '2018113907' )
+        {{-- @if( auth()->user()->NIK === '2018113907' )
         <div class="col-12 p-2">
             <a href="{{ route('booking.meeting-room.create') }}" class="btn btn-primary" style="float: right;">
                 Add Meeting Room
             </a>
         </div>
-        @endif
+        @endif --}}
         @foreach ($rooms as $title => $room)
             <div class="col-12">
                 <h1>

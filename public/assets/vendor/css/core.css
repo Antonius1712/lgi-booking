@@ -28598,3 +28598,15 @@ body:not(.modal-open) .layout-content-navbar .layout-navbar {
   --bs-footer-brand-hover-color: color-mix(in sRGB, var(--bs-paper-bg) 84%, var(--bs-dark-contrast));
   --bs-footer-link-hover-color: color-mix(in sRGB, var(--bs-paper-bg) 84%, var(--bs-dark-contrast));
 }
+
+.bg-disabled {
+  background-color: #efeff1;
+}
+
+table>thead>tr>th {
+  text-align: center;
+}
+
+.td-action {
+  text-align: center;
+}

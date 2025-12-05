@@ -32,12 +32,28 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/quill/editor.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/@form-validation/form-validation.css') }}" />
 
+    <link rel="stylesheet" href="{{ asset('assets/vendor/libs/notyf/notyf.css') }}" />
+
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
     @livewireStyles
 </head>
 
 <body>
+    <style>
+        #loading {
+            position: fixed;
+            left: 0px;
+            top: 0px;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            background: url('{{ asset(' assets/loading-content.gif') }}') 50% 50% no-repeat rgb(249, 249, 249);
+            opacity: 0.5;
+
+        }
+    </style>
+
     <div class="layout-wrapper layout-navbar-full layout-horizontal layout-without-menu">
         <div class="layout-container">
             <nav class="layout-navbar navbar navbar-expand-xl align-items-center" id="layout-navbar">
@@ -201,6 +217,67 @@
 
     <script src="{{ asset('assets/js/app-calendar-events.js') }}"></script>
     <script src="{{ asset('assets/js/app-calendar.js') }}"></script>
+
+    <script src="{{ asset('assets/vendor/libs/notyf/notyf.js') }}"></script>
+    <script src="{{ asset('assets/custom-toastr.js') }}"></script>
+
+    <script>
+        let sessionSuccess = @js(session('success'));
+        let sessionError = @js(session('error'));
+        let sessionInfo = @js(session('info'));
+        let sessionWarning = @js(session('warning'));
+
+        $(document).ready(function(){
+            if( sessionSuccess ){
+                notyf.open({
+                    type: 'success',
+                    message: sessionSuccess
+                });
+            }
+
+            if( sessionError ){
+                notyf.open({
+                    type: 'error',
+                    message: sessionError
+                });
+            }
+
+            if( sessionInfo ){
+                notyf.open({
+                    type: 'info',
+                    message: sessionInfo
+                });
+            }
+
+            if( sessionWarning ){
+                notyf.open({
+                    type: 'warning',
+                    message: sessionWarning
+                });
+            }
+
+            window.addEventListener('show-error', event => {
+                event.detail.forEach(err => {
+                    notyf.open({
+                        type: 'error',
+                        message: err.message
+                    });
+                });
+            });
+
+            window.addEventListener('show-success', event => {
+                event.detail.forEach(err => {
+                    notyf.open({
+                        type: 'success',
+                        message: err.message
+                    });
+                });
+            });
+
+        });
+    </script>
+
+    @yield('script')
 
     @livewireScripts
 </body>

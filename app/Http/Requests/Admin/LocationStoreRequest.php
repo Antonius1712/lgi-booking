@@ -1,17 +1,17 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreMeetingRoomRequest extends FormRequest
+class LocationStoreRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return auth()->user()->NIK === '2018113907';
+        return auth()->user()->isAdmin();
     }
 
     /**
@@ -22,12 +22,17 @@ class StoreMeetingRoomRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'location' => [
-                'required',
-            ],
             'name' => [
                 'required',
+                'unique:locations,name',
             ],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.unique' => 'The Location has already been taken',
         ];
     }
 }

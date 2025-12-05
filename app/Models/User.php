@@ -35,4 +35,13 @@ class User extends Model implements Authenticatable
 
         return $initials ?: strtoupper(substr($name, 0, 2));
     }
+
+    public function isAdmin()
+    {
+        $adminNiks = [
+            '2018113907',
+        ];
+
+        return in_array($this->NIK, $adminNiks);
+    }
 }

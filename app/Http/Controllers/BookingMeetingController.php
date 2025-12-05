@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\MeetingRoom\StoreAction;
-use App\Http\Requests\StoreMeetingRoomRequest;
+use App\Actions\Admin\MeetingRoomStoreAction;
+use App\Http\Requests\MeetingRoomStoreRequest;
 use App\Models\Location;
 use App\Models\MeetingRoom;
 use Illuminate\Http\Request;
@@ -22,7 +22,7 @@ class BookingMeetingController extends Controller
             })->map(function ($group) {
                 return $group->pluck('name')->toArray();
             })
-            ->toArray();
+        ->toArray();
 
         return view('booking.meeting-room.index', compact('timeRanges', 'rooms'));
     }
@@ -32,19 +32,15 @@ class BookingMeetingController extends Controller
      */
     public function create()
     {
-        $locations = Location::pluck('name', 'id');
-
-        return view('booking.meeting-room.create', compact('locations'));
+        
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreMeetingRoomRequest $request, StoreAction $action)
+    public function store()
     {
-        $action->handle($request);
-
-        return to_route('booking.meeting-room.index');
+        
     }
 
     /**
@@ -53,7 +49,6 @@ class BookingMeetingController extends Controller
     public function show(MeetingRoom $meetingRoom)
     {
         $timeRanges = $this->timeRange();
-
         return view('booking.meeting-room.show', compact('meetingRoom', 'timeRanges'));
     }
 

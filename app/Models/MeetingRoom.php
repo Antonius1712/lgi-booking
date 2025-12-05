@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class MeetingRoom extends Model
 {
@@ -17,8 +19,13 @@ class MeetingRoom extends Model
         return 'slug';
     }
 
-    public function location()
+    public function location(): HasOne
     {
-        return $this->belongsTo(Location::class, 'location_id', 'id');
+        return $this->HasOne(Location::class, 'id', 'location_id');
+    }
+
+    public function booking(): BelongsTo
+    {
+        return $this->belongsTo(Booking::class, 'id', 'meeting_room_id');
     }
 }
