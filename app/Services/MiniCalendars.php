@@ -16,8 +16,7 @@ class MiniCalendars
 
         return collect([-1, 0, 1])
             ->map(
-                fn($offset) =>
-                self::renderMonth(
+                fn ($offset) => self::renderMonth(
                     $current->copy()->addMonths($offset),
                     highlight: $offset === 0,
                     view: $view,
@@ -47,27 +46,27 @@ class MiniCalendars
             && (int) request()->month === $date->month;
 
         $href = request()->fullUrlWithQuery([
-            'view'  => 'month',
-            'year'  => $date->year,
+            'view' => 'month',
+            'year' => $date->year,
             'month' => $date->month,
-            'day'   => 1,
+            'day' => 1,
         ]);
 
         // 🔹 ADDED: month title class
         $monthTitleClass = $isSelectedMonth ? 'selected-month' : '';
 
-        $html = $wrapOpen . '<table class="calendar">';
+        $html = $wrapOpen.'<table class="calendar">';
         $html .= '<thead>';
-        $html .= '<tr><th colspan="7" class="' . $monthTitleClass . '">'
-            . '<a href="' . $href . '">' . $date->translatedFormat('F Y') . '</a>'
-            . '</th></tr><tr>';
-        
+        $html .= '<tr><th colspan="7" class="'.$monthTitleClass.'">'
+            .'<a href="'.$href.'">'.$date->translatedFormat('F Y').'</a>'
+            .'</th></tr><tr>';
+
         for ($i = 0; $i < 7; $i++) {
             $classTh = '';
-            if( $i == 5 || $i == 6 ) {
+            if ($i == 5 || $i == 6) {
                 $classTh = 'text-danger';
             }
-            $html .= '<th class="'.$classTh.'">' . Carbon::now()->startOfWeek()->addDays($i)->format('D') . '</th>';
+            $html .= '<th class="'.$classTh.'">'.Carbon::now()->startOfWeek()->addDays($i)->format('D').'</th>';
         }
 
         $html .= '</tr></thead><tbody>';
@@ -80,6 +79,7 @@ class MiniCalendars
             for ($i = 0; $i < 7; $i++, $d++) {
                 if ($d < 1 || $d > $daysInMonth) {
                     $html .= '<td class="day_blank"></td>';
+
                     continue;
                 }
 
@@ -112,17 +112,16 @@ class MiniCalendars
                 //     'day'   => $cellDate->day,
                 // ]);
 
-                $url = url()->current() . '?' . http_build_query(
+                $url = url()->current().'?'.http_build_query(
                     array_merge(
                         request()->except('view'),
                         [
-                            'year'  => $cellDate->year,
+                            'year' => $cellDate->year,
                             'month' => $cellDate->month,
-                            'day'   => $cellDate->day,
+                            'day' => $cellDate->day,
                         ]
                     )
                 );
-
 
                 $class = implode(' ', $class);
                 $classUrl = implode(' ', $classUrl);
@@ -139,6 +138,6 @@ class MiniCalendars
             $html .= '</tr>';
         }
 
-        return $html . '</tbody></table>' . $wrapClose;
+        return $html.'</tbody></table>'.$wrapClose;
     }
 }

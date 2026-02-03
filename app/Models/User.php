@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
+
 // use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Model implements Authenticatable
@@ -24,7 +25,6 @@ class User extends Model implements Authenticatable
         'two_factor_secret',
         'two_factor_recovery_codes',
     ];
-
 
     public $incrementing = false;
 

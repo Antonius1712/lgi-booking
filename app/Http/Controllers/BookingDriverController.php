@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\CalendarType;
 use App\Models\Booking;
 use App\Models\MeetingRoom;
-use App\Services\MiniCalendars;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class BookingDriverController extends Controller
 {
@@ -18,7 +16,7 @@ class BookingDriverController extends Controller
     {
         $this->booked = [
             'lantai-3-baru' => ['08:00', '08:30', '09:00'],
-            'e-commerce' => ['09:00']
+            'e-commerce' => ['09:00'],
         ];
     }
 
@@ -40,9 +38,8 @@ class BookingDriverController extends Controller
             ->with('location')
             ->orderBy('location_id', 'desc')
             ->orderBy('id', 'desc')
-        ->get();
+            ->get();
 
-        
         // $booked = Booking::query()
         //     ->where('booking_date', $date)
         //     ->select('booking_date', 'start_time', 'end_time')
@@ -51,7 +48,7 @@ class BookingDriverController extends Controller
         $booked = Booking::query()
             ->where('booking_date', $date)
             ->with(['meetingRoom:id,slug', 'user:NIK,Name'])
-        ->get(['id', 'nik', 'meeting_room_id', 'start_time', 'end_time', 'description']);
+            ->get(['id', 'nik', 'meeting_room_id', 'start_time', 'end_time', 'description']);
 
         return view('booking.driver.index', compact('calendarTypes', 'rooms', 'timeSlots', 'timeRanges', 'booked'));
     }
@@ -110,7 +107,7 @@ class BookingDriverController extends Controller
         for ($hour = 8; $hour < 17; $hour++) {
             $start = today()->setTime($hour, 0);
             $end = $start->copy()->addHour();
-            $timeSlots[] = $start->format('H:i') . ' - ' . $end->format('H:i');
+            $timeSlots[] = $start->format('H:i').' - '.$end->format('H:i');
         }
 
         return $timeSlots;
@@ -133,7 +130,7 @@ class BookingDriverController extends Controller
     public function fetchData(Request $request)
     {
         $roomId = MeetingRoom::where('slug', $request->room)->value('id');
-        if (!$roomId) {
+        if (! $roomId) {
             return response()->json([], 404);
         }
 
@@ -141,20 +138,20 @@ class BookingDriverController extends Controller
             ->where('booking_date', $request->date)
             ->where('status', 'confirmed')
             ->pluck('start_time')
-            ->map(fn($t) => Carbon::parse($t)->format('H:i'))
+            ->map(fn ($t) => Carbon::parse($t)->format('H:i'))
             ->toArray();
 
         // generate slots 08:00–17:00 (30 min)
         $slots = [];
         $start = Carbon::createFromTime(8, 0);
-        $end   = Carbon::createFromTime(17, 0);
+        $end = Carbon::createFromTime(17, 0);
 
         while ($start < $end) {
             $time = $start->format('H:i');
 
             $slots[] = [
-                'time'     => $time,
-                'label'    => $time,
+                'time' => $time,
+                'label' => $time,
                 'disabled' => in_array($time, $bookedTimes),
             ];
 

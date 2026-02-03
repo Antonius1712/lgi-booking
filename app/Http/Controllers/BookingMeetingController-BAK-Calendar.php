@@ -29,7 +29,7 @@ class BookingMeetingController extends Controller
             ->with('location')
             ->orderBy('location_id', 'desc')
             ->orderBy('id', 'desc')
-        ->get();
+            ->get();
 
         $timeRanges = $this->timeRange();
 

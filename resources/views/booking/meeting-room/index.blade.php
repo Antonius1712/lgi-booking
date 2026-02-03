@@ -438,11 +438,11 @@
 
                         if (booked[j].meeting_room.slug !== room_slug) continue;
 
-                        const bStart = timeToMinutes(booked[j].start_time);
-                        const bEnd   = timeToMinutes(booked[j].end_time);
+                        const bookedStart = timeToMinutes(booked[j].start_time);
+                        const bookedEnd   = timeToMinutes(booked[j].end_time);
 
                         // ❗ CORRECT overlap rule
-                        if (etimeMinutes > bStart && startMinutes < bEnd) {
+                        if (etimeMinutes > bookedStart && startMinutes < bookedEnd) {
                             disabled = true;
                             break;
                         }
@@ -466,9 +466,6 @@
                     `);
                 }
             } else {
-
-                console.log('idBooking', idBooking);
-
                 const etimeSelect = $('#e_etime');
                 etimeSelect.empty();
                 etimeSelect.append('<option value="">-- Select Time --</option>');
@@ -477,54 +474,48 @@
 
                 const startMinutes = timeToMinutes(stime);
 
-                let overlap = [];
-                for (let i = 0; i < timeRanges.length; i++) {
-                    const currentTimeRange = timeRanges[i];
+                let bookedTime = [];
+                booked.forEach(item => {
+                    if( item.id === idBooking ) return;
+
+                    let bookedStartTime = toMinutes(item.start_time);
+                    let bookedEndTime = toMinutes(item.end_time);                    
+                    
+                    let selectedStartTime = toMinutes(stime);
+                    let end   = toMinutes('17:00');
+
+                    // kalo waktu yang di pilih >= waktu booking yang lain. misal waktu book : 09:00 - 10:00 waktu yang di pilih 10:00.
+                    // maka endtime nya endtime dari waktu booking (10:00), karna waktu yang lain masih bisa di pilih.
+                    // kalo waktu yang di pilih < waktu booking yang lain. misal waktu book : 09:00 - 10:00 waktu yang di pilih 08:00.
+                    // maka endtime nya 17:00, karna tidak mungkin book melewati jam 09:00. maka select box hanya menampilkan 08:30, 09:00
+                    if( selectedStartTime >= bookedEndTime ) {
+                        end = (bookedEndTime - 30);
+                    }
+
+                    while (bookedStartTime <= end) {
+                        bookedStartTime += 30;
+                        bookedTime.push(fromMinutes(bookedStartTime));
+                    }
+                });
+
+                bookedTime = [...new Set(bookedTime)];
+
+                let availableTime = timeRanges.filter(time => !bookedTime.includes(time));
+                availableTime = availableTime.filter(time => time > stime);
+
+                for (let index = 0; index < availableTime.length; index++) {
+                    const currentTimeRange = availableTime[index];
                     const currentTimeRangeMinutes = timeToMinutes(currentTimeRange);
-
-                    console.log(booked);
-
-                    // End time must be AFTER start time
-                    if (currentTimeRangeMinutes <= startMinutes) continue;
-
-                    for (let j = 0; j < booked.length; j++) {
-                        if (booked[j].meeting_room.slug !== room_slug) continue;
-
-                        const bookedStartTime = timeToMinutes(booked[j].start_time);
-                        const bookedEndTime   = timeToMinutes(booked[j].end_time);
-
-                        if( booked[j].id !== idBooking ){
-                            console.log(`currentTimeRangeMinutes = ${currentTimeRangeMinutes} | bookedStartTime = ${bookedStartTime} | bookedEndTime = ${bookedEndTime}`);
-                            if( currentTimeRangeMinutes > bookedStartTime && currentTimeRangeMinutes < bookedEndTime ){
-                                overlap[i] = true;
-                            }
-                            
-                            if( currentTimeRangeMinutes >= bookedEndTime ){
-                                overlap[i] = true;
-                            }
-                            
-                            if( startMinutes >= bookedEndTime ){
-                                overlap[i] = false;
-                            }
-                        }
-
-                        if( booked[j].id === idBooking ){
-                            overlap[i] = false;
-                        }
-                    }
-
-                    // if (overlap) return;
-                    if( overlap[i] ) {
-                        continue;
-                    }
 
                     const durationMinutes = currentTimeRangeMinutes - startMinutes;
                     const hours = Math.floor(durationMinutes / 60);
                     const mins  = durationMinutes % 60;
 
                     let durationText = '';
+                    
                     if (hours) durationText += `${hours} Hour${hours > 1 ? 's' : ''} `;
                     if (mins)  durationText += `${mins} Minutes`;
+
                     durationText = durationText.trim();
 
                     etimeSelect.append(`
@@ -533,8 +524,70 @@
                         </option>
                     `);
                 }
+
+
+                // let overlap = [];
+                // for (let i = 0; i < timeRanges.length; i++) {
+                //     const currentTimeRange = timeRanges[i];
+                //     const currentTimeRangeMinutes = timeToMinutes(currentTimeRange);
+                        
+                //     if (currentTimeRangeMinutes <= startMinutes) continue;
+
+                //     for (let j = 0; j < booked.length; j++) {
+                //         if (booked[j].meeting_room.slug !== room_slug) continue;
+
+                //         const bookedStartTime = timeToMinutes(booked[j].start_time);
+                //         const bookedEndTime   = timeToMinutes(booked[j].end_time);
+
+                //         if( booked[j].id !== idBooking ){
+                //             console.log(`currentTimeRangeMinutes = ${currentTimeRangeMinutes} | bookedStartTime = ${bookedStartTime} | bookedEndTime = ${bookedEndTime}`);
+                //             if( currentTimeRangeMinutes > bookedStartTime && currentTimeRangeMinutes < bookedEndTime ){
+                //                 overlap[i] = true;
+                //             }
+                            
+                //             if( currentTimeRangeMinutes >= bookedEndTime ){
+                //                 overlap[i] = true;
+                //             }
+                            
+                //             if( startMinutes >= bookedEndTime ){
+                //                 overlap[i] = false;
+                //             }
+                //         }
+
+                //         if( booked[j].id === idBooking ){
+                //             overlap[i] = false;
+                //         }
+                //     }
+
+                //     const durationMinutes = currentTimeRangeMinutes - startMinutes;
+                //     const hours = Math.floor(durationMinutes / 60);
+                //     const mins  = durationMinutes % 60;
+
+                //     let durationText = '';
+                //     if (hours) durationText += `${hours} Hour${hours > 1 ? 's' : ''} `;
+                //     if (mins)  durationText += `${mins} Minutes`;
+                //     durationText = durationText.trim();
+
+                //     etimeSelect.append(`
+                //         <option value="${currentTimeRange}">
+                //             ${currentTimeRange} (${durationText})
+                //         </option>
+                //     `);
+                // }
             }
         }
+
+        function toMinutes(time) {
+            const [h, m] = time.split(':');
+            return parseInt(h) * 60 + parseInt(m);
+        }
+
+        function fromMinutes(minutes) {
+            const h = String(Math.floor(minutes / 60)).padStart(2, '0');
+            const m = String(minutes % 60).padStart(2, '0');
+            return `${h}:${m}`;
+        }
+
     });
 </script>
 @endsection

@@ -6,15 +6,19 @@ use App\Enums\CalendarType;
 use App\Models\Booking;
 use App\Models\MeetingRoom;
 use Carbon\Carbon;
-use Livewire\Component;
 use Livewire\Attributes\Url;
+use Livewire\Component;
 
 class BookingInTableView extends Component
 {
     public $calendarTypes;
+
     public $rooms;
+
     public $timeRanges;
+
     public bool $loaded = false;
+
     public $description;
 
     #[Url(as: 'd')]
@@ -44,9 +48,8 @@ class BookingInTableView extends Component
         // $test = $this->searchAbailableRoom();
         // dd($test);
 
-
         return view('livewire.booking-in-table-view', [
-            'booked' => $this->searchAbailableRoom()
+            'booked' => $this->searchAbailableRoom(),
         ]);
     }
 
@@ -56,14 +59,14 @@ class BookingInTableView extends Component
         return Booking::query()
             ->where('booking_date', $this->date)
             ->with([
-                'meetingRoom' => fn($query) => $query->select('id', 'slug'),
-                'user'
+                'meetingRoom' => fn ($query) => $query->select('id', 'slug'),
+                'user',
             ])
             ->get()
-            ->groupBy(function($booking){
+            ->groupBy(function ($booking) {
                 return $booking->meetingRoom->slug;
             })
-            ->map(function($bookings){
+            ->map(function ($bookings) {
                 return $bookings->map(function ($booking) {
                     return [
                         Carbon::parse($booking->start_time)->format('H:i'),
@@ -95,7 +98,7 @@ class BookingInTableView extends Component
         //     ->toArray();
     }
 
-    public function submitBook($range): Void
+    public function submitBook($range): void
     {
         // $this->validate([
         //     'description' => 'required'
