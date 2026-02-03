@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Location extends Model
 {
@@ -10,4 +11,9 @@ class Location extends Model
         'slug',
         'name',
     ];
+
+    public function meetingRooms(): HasMany
+    {
+        return $this->hasMany(MeetingRoom::class);
+    }
 }

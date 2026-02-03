@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
+// use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Model implements Authenticatable
 {
     use AuthenticatableTrait;
+    // use TwoFactorAuthenticatable;
 
     protected $connection = 'LgiGlobal114';
 
@@ -17,6 +19,12 @@ class User extends Model implements Authenticatable
     protected $primaryKey = 'NIK';
 
     protected $keyType = 'string';
+
+    protected $hidden = [
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+    ];
+
 
     public $incrementing = false;
 

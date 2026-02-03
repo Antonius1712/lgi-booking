@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // External jQuery Elements
     const eventLabel = $('#eventLabel'); // ! Using jQuery vars due to select2 jQuery dependency
-    const eventGuests = $('#eventGuests'); // ! Using jQuery vars due to select2 jQuery dependency
+    const eventGuests = $('#participant'); // ! Using jQuery vars due to select2 jQuery dependency
 
     // Event Data
     let currentEvents = events; // Assuming events are imported from app-calendar-events.js
@@ -87,10 +87,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!option.id) return option.text;
         return `
     <div class='d-flex flex-wrap align-items-center'>
-      <div class='avatar avatar-xs me-2'>
-        <img src='${assetsPath}img/avatars/${$(option.element).data('avatar')}'
-          alt='avatar' class='rounded-circle' />
-      </div>
       ${option.text}
     </div>`;
       }
@@ -112,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function () {
         monthSelectorType: 'static',
         static: true,
         enableTime: true,
-        altFormat: 'Y-m-dTH:i:S',
+        altFormat: 'Y-m-d H:i:S',
         onReady: function (selectedDates, dateStr, instance) {
           if (instance.isMobile) {
             instance.mobileInput.setAttribute('step', null);
@@ -127,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
         monthSelectorType: 'static',
         static: true,
         enableTime: true,
-        altFormat: 'Y-m-dTH:i:S',
+        altFormat: 'Y-m-d H:i:S',
         onReady: function (selectedDates, dateStr, instance) {
           if (instance.isMobile) {
             instance.mobileInput.setAttribute('step', null);
@@ -214,15 +210,21 @@ document.addEventListener('DOMContentLoaded', function () {
     // * This will be called by fullCalendar to fetch events. Also this can be used to refetch events.
     // --------------------------------------------------------------------------------------------------
     function fetchEvents(info, successCallback) {
-      let calendars = selectedCalendars();
-      // We are reading event object from app-calendar-events.js file directly by including that file above app-calendar file.
-      // You should make an API call, look into above commented API call for reference
-      let selectedEvents = currentEvents.filter(function (event) {
-        return calendars.includes(event.extendedProps.calendar.toLowerCase());
-      });
-      // if (selectedEvents.length > 0) {
-      successCallback(selectedEvents);
-      // }
+      // let calendars = selectedCalendars();
+      // let selectedEvents = currentEvents.filter(function (event) {
+      //   return calendars.includes(event.extendedProps.calendar.toLowerCase());
+      // });
+      // successCallback(selectedEvents);
+      
+      fetch('/booking/fetch-data?' + new URLSearchParams(), {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => successCallback(data))
+      .catch(error => console.error('Error fetching events:', error));
     }
 
     // Init FullCalendar
@@ -344,45 +346,91 @@ document.addEventListener('DOMContentLoaded', function () {
     // Add Event
     // ------------------------------------------------
     function addEvent(eventData) {
-      // ? Add new event data to current events object and refetch it to display on calender
-      // ? You can write below code to AJAX call success response
-
-      currentEvents.push(eventData);
-      calendar.refetchEvents();
-
-      // ? To add event directly to calender (won't update currentEvents object)
-      // calendar.addEvent(eventData);
+      // currentEvents.push(eventData);
+      // calendar.refetchEvents();
+      fetch('/booking/meeting-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          meeting_room_id: 1, // You'll need to add this to your form
+          title: eventData.title,
+          start_time: eventData.start,
+          end_time: eventData.end,
+          all_day: eventData.allDay || false,
+          calendar_type: eventData.extendedProps.calendar,
+          event_url: eventData.url,
+          location: eventData.extendedProps.location,
+          description: eventData.extendedProps.description,
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          calendar.refetchEvents();
+        }
+      })
+      .catch(error => console.error('Error adding event:', error));
     }
 
     // Update Event
     // ------------------------------------------------
     function updateEvent(eventData) {
-      // ? Update existing event data to current events object and refetch it to display on calender
-      // ? You can write below code to AJAX call success response
-      eventData.id = parseInt(eventData.id);
-      currentEvents[currentEvents.findIndex(el => el.id === eventData.id)] = eventData; // Update event by id
-      calendar.refetchEvents();
-
-      // ? To update event directly to calender (won't update currentEvents object)
-      // let propsToUpdate = ['id', 'title', 'url'];
-      // let extendedPropsToUpdate = ['calendar', 'guests', 'location', 'description'];
-
-      // updateEventInCalendar(eventData, propsToUpdate, extendedPropsToUpdate);
+      // eventData.id = parseInt(eventData.id);
+      // currentEvents[currentEvents.findIndex(el => el.id === eventData.id)] = eventData; // Update event by id
+      // calendar.refetchEvents();
+      fetch(`/booking/meeting-room/${eventData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          title: eventData.title,
+          start_time: eventData.start,
+          end_time: eventData.end,
+          all_day: eventData.allDay || false,
+          calendar_type: eventData.extendedProps.calendar,
+          event_url: eventData.url,
+          location: eventData.extendedProps.location,
+          description: eventData.extendedProps.description,
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          calendar.refetchEvents();
+        }
+      })
+      .catch(error => console.error('Error updating event:', error));
     }
 
     // Remove Event
     // ------------------------------------------------
 
     function removeEvent(eventId) {
-      // ? Delete existing event data to current events object and refetch it to display on calender
-      // ? You can write below code to AJAX call success response
-      currentEvents = currentEvents.filter(function (event) {
-        return event.id != eventId;
-      });
-      calendar.refetchEvents();
-
-      // ? To delete event directly to calender (won't update currentEvents object)
-      // removeEventInCalendar(eventId);
+      // currentEvents = currentEvents.filter(function (event) {
+      //   return event.id != eventId;
+      // });
+      // calendar.refetchEvents();
+      fetch(`/booking/meeting-room/${eventId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+          'Accept': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          calendar.refetchEvents();
+        }
+      })
+      .catch(error => console.error('Error deleting event:', error));
     }
 
     // (Update Event In Calendar (UI Only)

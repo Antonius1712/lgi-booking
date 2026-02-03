@@ -17,7 +17,10 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::prefix('booking')->as('booking.')->group(function () {
+        Route::get('/fetch-data', [BookingMeetingController::class, 'fetchData'])->name('fetchData');
         Route::resource('/meeting-room', BookingMeetingController::class);
         Route::resource('/driver', BookingDriverController::class);
     });
 });
+
+// require __DIR__.'/settings.php';

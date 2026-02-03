@@ -28632,3 +28632,132 @@ table>thead>tr>th {
 .td-action {
   text-align: center;
 }
+
+@media (max-width: 768px) {
+    .room-header-cell {
+        vertical-align: middle;
+        font-size: 9px;
+        padding: 4px 2px;
+        min-width: 60px;
+        max-width: 80px;
+        line-height: 1.3;
+        white-space: normal; /* Allow wrapping */
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .room-header-cell a {
+        display: inline-block;
+        line-height: 1.3;
+        white-space: normal; /* Allow wrapping */
+        word-wrap: break-word;
+    }
+
+    .table td:first-child {
+        font-size: 10px;
+        padding: 4px 2px;
+        white-space: nowrap;
+    }
+
+    .booked-cell {
+        font-size: 9px;
+        line-height: 1.2;
+        padding: 4px 2px;
+    }
+
+    .booked-cell strong {
+        font-size: 10px;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table {
+        min-width: 500px;
+    }
+    
+    .table th, .table td {
+        padding: 4px 2px;
+    }
+    
+    /* Fix header height to accommodate 2 lines */
+    .table thead th {
+        height: auto;
+        min-height: 32px;
+    }
+}
+
+.table-responsive {
+    max-height: 500px;
+    overflow: auto; 
+}
+
+.table-responsive thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10; 
+    background-color: #f8f9fa;
+}
+
+.table-responsive .fixed-column {
+    position: sticky;
+    left: 0;
+    z-index: 5; 
+    background-color: #fff;
+    border-right: 1px solid #dee2e6 !important;
+}
+
+.table-responsive .fixed-header-cell.fixed-column {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 15; 
+    background-color: #e9ecef;
+    border-right: 1px solid #dee2e6 !important;
+}
+
+.table-responsive .fixed-column {
+    min-width: 80px;
+}
+
+.room-header-cell {
+    white-space: normal !important; 
+    text-align: center;
+    vertical-align: middle; 
+}
+
+.calendar a.today {
+    border: 1px solid #ff6600;
+    border-radius: 50%;
+    padding: 4px 8px;
+}
+
+.calendar a.selected {
+    background: #ff6600;
+    color: #fff;
+    border-radius: 50%;
+    padding: 4px 8px;
+}
+
+.calendar a.today.selected {
+    background: #ff6600;
+    border: 2px solid #ffc107;
+}
+
+.booked-cell {
+    max-width: 160px;        /* adjust per your layout */
+    white-space: normal;     /* allow wrapping */
+    word-wrap: break-word;   /* legacy support */
+    word-break: break-word; /* long words */
+    line-height: 1.3;
+    padding: 8px;
+}
+
+.hoverCell:hover {
+  /* background-color: green; */
+  outline: 2px solid #FF6600;
+  outline-offset: -2px;
+
+}

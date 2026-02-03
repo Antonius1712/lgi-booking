@@ -20,10 +20,15 @@ return new class extends Migration
             $table->time('start_time');
             $table->time('end_time');
             $table->string('status')->default('confirmed');
-            $table->text('notes')->nullable();
+            $table->string('title')->nullable();
+            $table->string('event_url')->nullable();
+            $table->string('location')->nullable();
+            $table->text('description')->nullable();
+            $table->enum('calendar_type', ['Meeting', 'Interview'])->default('Meeting');
+            $table->json('guest_emails')->nullable(); // ← NEW: Store invited guests
             $table->timestamps();
 
-            $table->unique(['booking_date', 'time_slot']);
+            $table->unique(['meeting_room_id', 'booking_date', 'time_slot']);
         });
     }
 

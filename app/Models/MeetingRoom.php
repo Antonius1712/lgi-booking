@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MeetingRoom extends Model
 {
@@ -19,13 +19,13 @@ class MeetingRoom extends Model
         return 'slug';
     }
 
-    public function location(): HasOne
+    public function location(): BelongsTo
     {
-        return $this->HasOne(Location::class, 'id', 'location_id');
+        return $this->belongsTo(Location::class);
     }
 
-    public function booking(): BelongsTo
+    public function booking(): HasMany
     {
-        return $this->belongsTo(Booking::class, 'id', 'meeting_room_id');
+        return $this->hasMany(Booking::class, 'id', 'meeting_room_id');
     }
 }

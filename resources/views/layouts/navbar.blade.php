@@ -23,25 +23,35 @@
                 </ul>
             </li>
             @if( auth()->user()->isAdmin() )
-            <li class="menu-item">
-                <a href="{{ route('admin.locations.index') }}" class="menu-link">
-                    <i class="menu-icon icon-base bx bx-map"></i>
-                    <div data-i18n="Locations">Locations</div>
-                </a>
-            </li>
 
             <li class="menu-item">
-                <a href="{{ route('admin.meeting-rooms.index') }}" class="menu-link">
-                    <i class="menu-icon icon-base bx bx-door-open"></i>
-                    <div data-i18n="Setting Meeting Room">Setting Meeting Room</div>
+                <a href="javascript:void(0)" class="menu-link menu-toggle">
+                    <i class="menu-icon icon-base bx bx-cog"></i>
+                    <div data-i18n="Admin">Admin</div>
                 </a>
-            </li>
 
-            <li class="menu-item">
-                <a href="{{ route('admin.drivers.index') }}" class="menu-link">
-                    <i class="menu-icon icon-base bx bx-car"></i>
-                    <div data-i18n="Setting Driver">Setting Driver</div>
-                </a>
+                <ul class="menu-sub">
+                    <li class="menu-item">
+                        <a href="{{ route('admin.locations.index') }}" class="menu-link">
+                            <i class="menu-icon icon-base bx bx-map"></i>
+                            <div data-i18n="Locations">Locations</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a href="{{ route('admin.meeting-rooms.index') }}" class="menu-link">
+                            <i class="menu-icon icon-base bx bx-door-open"></i>
+                            <div data-i18n="Setting Meeting Room">Setting Meeting Room</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a href="{{ route('admin.drivers.index') }}" class="menu-link">
+                            <i class="menu-icon icon-base bx bx-car"></i>
+                            <div data-i18n="Setting Driver">Setting Driver</div>
+                        </a>
+                    </li>
+                </ul>
             </li>
             @endif
         </ul>

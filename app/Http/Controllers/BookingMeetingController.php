@@ -2,130 +2,171 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CalendarType;
+use App\Models\Booking;
 use App\Models\MeetingRoom;
+use App\Services\MiniCalendars;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class BookingMeetingController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
+    public $booked;
+
+    public function __construct()
     {
-        $sdate = $request->sdate;
-        $edate = $request->edate;
+        $this->booked = [
+            'lantai-3-baru' => ['08:00', '08:30', '09:00'],
+            'e-commerce' => ['09:00']
+        ];
+    }
 
-        // Fetch meeting rooms with their bookings within the date range
-        $rooms = MeetingRoom::with(['location', 'booking' => function ($query) use ($sdate, $edate) {
-            $query->whereBetween('booking_date', [$sdate, $edate]);
-        }])->get();
+    public function index(Request $request, MiniCalendars $miniCalendars): View
+    {
+        $year = $request->year ?? now()->format('Y');
+        $month = $request->month ?? now()->format('m');
+        $day = $request->day ?? now()->format('d');
+        $date = Carbon::parse("$year-$month-$day")->format('Y-m-d');
 
-        // Group rooms by location
-        $groupedRooms = $rooms->groupBy(function ($room) {
-            return $room->location->name; // Group by location name
-        });
-
-        // Prepare time slots availability
-        $availability = [];
+        $calendarTypes = CalendarType::cases();
+        $timeSlots = $this->timeSlot();
         $timeRanges = $this->timeRange();
 
-        foreach ($groupedRooms as $location => $rooms) {
-            foreach ($rooms as $room) {
-                // Initialize availability for each room
-                $availability[$location][$room->name] = [];
+        $rooms = MeetingRoom::query()
+            ->with('location')
+            ->orderBy('location_id', 'desc')
+            ->orderBy('id', 'desc')
+        ->get();
 
-                // Loop through each date in the range
-                for ($date = strtotime($sdate); $date <= strtotime($edate); $date = strtotime('+1 day', $date)) {
-                    $dateString = date('Y-m-d', $date);
-                    $availability[$location][$room->name][$dateString] = [];
+        
+        // $booked = Booking::query()
+        //     ->where('booking_date', $date)
+        //     ->select('booking_date', 'start_time', 'end_time')
+        // ->get();
 
-                    // Check each time range
-                    foreach ($timeRanges as $timeRange) {
-                        [$start, $end] = explode(' - ', $timeRange);
+        $booked = Booking::query()
+            ->where('booking_date', $date)
+            ->with(['meetingRoom:id,slug', 'user:NIK,Name'])
+        ->get(['id', 'nik', 'meeting_room_id', 'start_time', 'end_time', 'description']);
 
-                        // Use the 'any()' method to check for overlapping bookings
-                        $isBooked = $room->booking()->where('booking_date', $dateString)
-                            ->where(function ($query) use ($start, $end) {
-                                $query->where('start_time', '<', $end)
-                                    ->where('end_time', '>', $start);
-                            })->exists(); // Check if there are any overlapping bookings
+        return view('booking.meeting-room.index', compact('calendarTypes', 'rooms', 'timeSlots', 'timeRanges', 'booked', 'miniCalendars'));
+    }
 
-                        // If not booked, add to availability
-                        if (! $isBooked) {
-                            $availability[$location][$room->name][$dateString][] = $timeRange;
-                        }
-                    }
-                }
-            }
+    public function store(Request $request)
+    {
+        $room = $request->room;
+        $year = $request->year;
+        $month = $request->month;
+        $day = $request->day;
+        $time = $request->time;
+        $stime = $request->stime;
+        $etime = $request->etime;
+        $description = $request->description;
+
+        $room_id = MeetingRoom::where('slug', $room)->value('id');
+        $booking_date = Carbon::parse("$year-$month-$day")->format('Y-m-d');
+        $time_slot = "$stime - $etime";
+        $start_time = $stime;
+        $end_time = $etime;
+
+        Booking::create([
+            'meeting_room_id' => $room_id,
+            'nik' => auth()->user()->NIK,
+            'booking_date' => $booking_date,
+            'time_slot' => $time_slot,
+            'start_time' => $start_time,
+            'end_time' => $end_time,
+            'status' => 'Booked',
+            'description' => $description
+        ]);
+
+        return back()->with(['success' => 'Sukses']);
+    }
+
+    public function update($id, Request $request){
+        $room = $request->room;
+        $year = $request->year;
+        $month = $request->month;
+        $day = $request->day;
+        $time = $request->time;
+        $stime = $request->e_stime;
+        $etime = $request->e_etime;
+        $description = $request->e_description;
+
+        $booking_date = Carbon::parse("$year-$month-$day")->format('Y-m-d');
+        $time_slot = "$stime - $etime";
+        $start_time = $stime;
+        $end_time = $etime;
+
+        Booking::where('id', $id)->update([
+            'time_slot' => $time_slot,
+            'start_time' => $start_time,
+            'end_time' => $end_time,
+            'status' => 'Booked',
+            'description' => $description
+        ]);
+
+        return back()->with(['success' => 'Sukses']);
+    }
+
+    private function timeSlot()
+    {
+        $timeSlots = [];
+        for ($hour = 8; $hour < 17; $hour++) {
+            $start = today()->setTime($hour, 0);
+            $end = $start->copy()->addHour();
+            $timeSlots[] = $start->format('H:i') . ' - ' . $end->format('H:i');
         }
 
-        // dd($availability);
-
-        return view('booking.meeting-room.index', compact('availability', 'groupedRooms'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create() {}
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store() {}
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(MeetingRoom $meetingRoom)
-    {
-        $timeRanges = $this->timeRange();
-
-        return view('booking.meeting-room.show', compact('meetingRoom', 'timeRanges'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return $timeSlots;
     }
 
     private function timeRange()
     {
-        // $timeRanges = [];
-        // for ($hour = 0; $hour < 24; $hour++) {
-        //     $start = today()->setTime($hour, 0);
-        //     $end = $start->copy()->addHour();
-        //     $timeRanges[] = $start->format('H:i') . ' - ' . $end->format('H:i');
-        // }
-
-        // return $timeRanges;
-
         $timeRanges = [];
-        for ($hour = 8; $hour < 17; $hour++) {
-            $start = today()->setTime($hour, 0);
-            $end = $start->copy()->addHour();
-            $timeRanges[] = $start->format('H:i').' - '.$end->format('H:i');
+        for ($hour = 8; $hour <= 16; $hour++) {
+            foreach ([0, 30] as $minute) {
+                $start = today()->setTime($hour, $minute);
+                $timeRanges[] = $start->format('H:i');
+            }
         }
+        $timeRanges[] = today()->setTime(17, 0)->format('H:i');
 
         return $timeRanges;
+    }
+
+    public function fetchData(Request $request)
+    {
+        $roomId = MeetingRoom::where('slug', $request->room)->value('id');
+        if (!$roomId) {
+            return response()->json([], 404);
+        }
+
+        $bookedTimes = Booking::where('meeting_room_id', $roomId)
+            ->where('booking_date', $request->date)
+            ->where('status', 'confirmed')
+            ->pluck('start_time')
+            ->map(fn($t) => Carbon::parse($t)->format('H:i'))
+            ->toArray();
+
+        // generate slots 08:00–17:00 (30 min)
+        $slots = [];
+        $start = Carbon::createFromTime(8, 0);
+        $end   = Carbon::createFromTime(17, 0);
+
+        while ($start < $end) {
+            $time = $start->format('H:i');
+
+            $slots[] = [
+                'time'     => $time,
+                'label'    => $time,
+                'disabled' => in_array($time, $bookedTimes),
+            ];
+
+            $start->addMinutes(30);
+        }
+
+        return response()->json($slots);
     }
 }

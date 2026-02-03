@@ -11,6 +11,7 @@
     <title>LGI - GS Booking System</title>
 
     <meta name="description" content="" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/favicon/favicon.ico') }}" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -34,6 +35,10 @@
 
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/notyf/notyf.css') }}" />
 
+    <link rel="stylesheet" href="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2.css') }}" />
+
+    <link rel="stylesheet" hre="{{ asset('assets/vendor/libs/flatpickr/flatpickr.css') }}" />
+
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
     @livewireStyles
@@ -48,11 +53,17 @@
             width: 100%;
             height: 100%;
             z-index: 9999;
-            background: url('{{ asset(' assets/loading-content.gif') }}') 50% 50% no-repeat rgb(249, 249, 249);
+            background: url('{{ asset('assets/loading-content.gif') }}') 50% 50% no-repeat rgb(249, 249, 249);
             opacity: 0.5;
 
         }
+
+        a {
+            color: black;
+        }
     </style>
+
+    <div id="loading" style="display:none;"></div>
 
     <div class="layout-wrapper layout-navbar-full layout-horizontal layout-without-menu">
         <div class="layout-container">
@@ -91,7 +102,8 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
-                                        <a class="dropdown-item" href="pages-account-settings-account.html">
+                                        {{-- <a class="dropdown-item" href="{{ route('profile.edit') }}"> --}}
+                                        <a class="dropdown-item" href="">
                                             <div class="d-flex">
                                                 <div class="flex-shrink-0 me-3">
                                                     <div class="avatar avatar-online">
@@ -220,6 +232,9 @@
 
     <script src="{{ asset('assets/vendor/libs/notyf/notyf.js') }}"></script>
     <script src="{{ asset('assets/custom-toastr.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2.js') }}"></script>
+
+    <script src="{{ asset('assets/vendor/libs/flatpickr/flatpickr.js') }}"></script>
 
     <script>
         let sessionSuccess = @js(session('success'));
