@@ -26,6 +26,6 @@ class MeetingRoom extends Model
 
     public function booking(): HasMany
     {
-        return $this->hasMany(Booking::class, 'id', 'meeting_room_id');
+        return $this->hasMany(MeetingRoomBooking::class, 'id', 'meeting_room_id');
     }
 }

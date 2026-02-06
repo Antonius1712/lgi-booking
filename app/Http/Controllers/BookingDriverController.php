@@ -2,9 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\CalendarType;
+use App\Actions\BookingDriverStoreAction;
+use App\Actions\BookingDriverUpdateAction;
+use App\Enums\RoleEnum;
+use App\Enums\UsageTypeEnum;
+use App\Http\Requests\BookingDriverStoreRequest;
+use App\Http\Requests\BookingDriverUpdateRequest;
 use App\Models\Booking;
+use App\Models\DriverBooking;
 use App\Models\MeetingRoom;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -30,67 +37,50 @@ class BookingDriverController extends Controller
         $day = $request->day ?? now()->format('d');
         $date = Carbon::parse("$year-$month-$day")->format('Y-m-d');
 
-        $calendarTypes = CalendarType::cases();
+        $usageTypes = UsageTypeEnum::cases();
         $timeSlots = $this->timeSlot();
         $timeRanges = $this->timeRange();
 
-        $rooms = MeetingRoom::query()
-            ->with('location')
-            ->orderBy('location_id', 'desc')
-            ->orderBy('id', 'desc')
-            ->get();
+        $drivers = User::query()
+            ->with('UserGroup')
+            ->whereHas('UserGroup', function ($userGroup) {
+                $userGroup->whereHas('Group', function ($group) {
+                    $group->whereHas('App', function ($app) {
+                        $app->where('AppCode', 'lgi-booking');
+                    });
+                })
+                    ->where('GroupCode', RoleEnum::DRIVER);
+            })
+        ->get();
 
-        // $booked = Booking::query()
-        //     ->where('booking_date', $date)
-        //     ->select('booking_date', 'start_time', 'end_time')
-        // ->get();
+        // dd($date);
+        $booked = DriverBooking::query()
+            ->where('scheduled_pickup_date', $date)
+            ->with(['user:NIK,Name', 'driver:NIK,Name'])
+        ->get();
 
-        $booked = Booking::query()
-            ->where('booking_date', $date)
-            ->with(['meetingRoom:id,slug', 'user:NIK,Name'])
-            ->get(['id', 'nik', 'meeting_room_id', 'start_time', 'end_time', 'description']);
+        // dd($booked);
+        // $booked = [];
 
-        return view('booking.driver.index', compact('calendarTypes', 'rooms', 'timeSlots', 'timeRanges', 'booked'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        return view('booking.driver.index', compact('usageTypes', 'drivers', 'timeSlots', 'timeRanges', 'booked'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(BookingDriverStoreRequest $request, BookingDriverStoreAction $action)
     {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
+        $action->handle($request);
+        return back()->with(['success' => 'Sukses']);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(BookingDriverUpdateRequest $request, string $id, BookingDriverUpdateAction $action)
     {
-        //
+        $action->handle($id, $request);
+        return back()->with(['success' => 'Sukses']);
     }
 
     /**

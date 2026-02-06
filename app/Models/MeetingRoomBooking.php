@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Booking extends Model
+class MeetingRoomBooking extends Model
 {
     protected $fillable = [
         'meeting_room_id',
@@ -15,11 +15,9 @@ class Booking extends Model
         'start_time',
         'end_time',
         'status',
-        'title',
-        'event_url',
         'location',
         'description',
-        'calendar_type',
+        'usage_type',
         'guest_emails',
     ];
 

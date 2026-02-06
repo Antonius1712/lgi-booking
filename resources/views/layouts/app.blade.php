@@ -39,6 +39,9 @@
 
     <link rel="stylesheet" hre="{{ asset('assets/vendor/libs/flatpickr/flatpickr.css') }}" />
 
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.3/themes/base/jquery-ui.css" />
+
+
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
     @livewireStyles
@@ -53,7 +56,7 @@
             width: 100%;
             height: 100%;
             z-index: 9999;
-            background: url('{{ asset('assets/loading-content.gif') }}') 50% 50% no-repeat rgb(249, 249, 249);
+            background: url('{{ asset(' assets/loading-content.gif') }}') 50% 50% no-repeat rgb(249, 249, 249);
             opacity: 0.5;
 
         }
@@ -71,8 +74,16 @@
                 <div class="container-xxl">
                     <div class="navbar-brand app-brand demo d-none d-xl-flex py-0 me-4">
                         <a href="{{ route('home') }}" class="app-brand-link gap-2">
-                            <span class="app-brand-text demo menu-text fw-bold text-heading">
+                            {{-- <span class="app-brand-text demo menu-text fw-bold text-heading">
                                 LGI
+                                <b style="font-size: 13px;">a company of Hanwha</b>
+                            </span> --}}
+                            <span
+                                class="app-brand-text demo menu-text fw-bold text-heading d-flex flex-column align-items-center">
+                                <span>LGI</span>
+                                <small style="font-size: 13px; font-weight: normal;">
+                                    a company of Hanwha
+                                </small>
                             </span>
                         </a>
 
@@ -103,22 +114,22 @@
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
                                         {{-- <a class="dropdown-item" href="{{ route('profile.edit') }}"> --}}
-                                        <a class="dropdown-item" href="">
-                                            <div class="d-flex">
-                                                <div class="flex-shrink-0 me-3">
-                                                    <div class="avatar avatar-online">
-                                                        <img src="../../assets/img/avatars/1.png" alt
-                                                            class="w-px-40 h-auto rounded-circle" />
+                                            <a class="dropdown-item" href="">
+                                                <div class="d-flex">
+                                                    <div class="flex-shrink-0 me-3">
+                                                        <div class="avatar avatar-online">
+                                                            <img src="../../assets/img/avatars/1.png" alt
+                                                                class="w-px-40 h-auto rounded-circle" />
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-0">{{ auth()->user()->Name }}</h6>
+                                                        <small class="text-body-secondary">
+                                                            {{ auth()->user()->NIK }}
+                                                        </small>
                                                     </div>
                                                 </div>
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-0">{{ auth()->user()->Name }}</h6>
-                                                    <small class="text-body-secondary">
-                                                        {{ auth()->user()->NIK }}
-                                                    </small>
-                                                </div>
-                                            </div>
-                                        </a>
+                                            </a>
                                     </li>
                                     <li>
                                         <form action="{{ route('logout') }}" method="post">
@@ -207,6 +218,9 @@
     <div class="drag-target"></div>
 
     <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
+
+    <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.min.js"></script>
+
     <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
     <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/@algolia/autocomplete-js.js') }}"></script>
@@ -233,8 +247,6 @@
     <script src="{{ asset('assets/vendor/libs/notyf/notyf.js') }}"></script>
     <script src="{{ asset('assets/custom-toastr.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2.js') }}"></script>
-
-    <script src="{{ asset('assets/vendor/libs/flatpickr/flatpickr.js') }}"></script>
 
     <script>
         let sessionSuccess = @js(session('success'));

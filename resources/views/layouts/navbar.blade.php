@@ -15,7 +15,7 @@
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="{{ route('booking.driver.index') }}" class="menu-link" target="_blank">
+                        <a href="{{ route('booking.driver.index') }}" class="menu-link">
                             <i class="menu-icon icon-base bx bx-car"></i>
                             <div data-i18n="Driver">Driver</div>
                         </a>

@@ -3,109 +3,112 @@
 <div class="card">
     <div class="card-body row justify-content-center g-4">
         @php
-            $year = request()->year ?? now()->format('Y');
-            $month = request()->month ?? now()->format('m');
-            $day = request()->day ?? now()->format('d');
+        $year = request()->year ?? now()->format('Y');
+        $month = request()->month ?? now()->format('m');
+        $day = request()->day ?? now()->format('d');
 
-            $slotMinutes = 30;
-            $bookedMap = [];
-            $skipMap = [];
+        $slotMinutes = 30;
+        $bookedMap = [];
+        $skipMap = [];
 
-            foreach ($booked as $b) {
-                if (!$b->meetingRoom) continue;
+        foreach ($booked as $b) {
+        if (!$b->meetingRoom) continue;
 
-                $roomSlug = $b->meetingRoom->slug;
+        $roomSlug = $b->meetingRoom->slug;
 
-                $start = $b->start_time->format('H:i');
-                $end = $b->end_time->format('H:i');
+        $start = $b->start_time->format('H:i');
+        $end = $b->end_time->format('H:i');
 
-                $rowspan = $b->start_time->diffInMinutes($b->end_time) / $slotMinutes;
+        $rowspan = $b->start_time->diffInMinutes($b->end_time) / $slotMinutes;
 
-                // booking start cell
-                $bookedMap[$roomSlug][$start] = [
-                'id' => $b->id,
-                'rowspan' => $rowspan,
-                'end' => $end,
-                'by' => $b->user->Name,
-                'description' => $b->description
-                ];
+        // booking start cell
+        $bookedMap[$roomSlug][$start] = [
+        'id' => $b->id,
+        'nik' => $b->nik,
+        'name' => $b->user->Name,
+        'rowspan' => $rowspan,
+        'end' => $end,
+        'by' => $b->user->Name,
+        'description' => $b->description
+        ];
 
-                // mark rows to skip
-                for ($i = 1; $i < $rowspan; $i++) { 
-                    $skipTime=$b->start_time->copy()
-                    ->addMinutes($i * $slotMinutes)
-                    ->format('H:i');
+        // mark rows to skip
+        for ($i = 1; $i < $rowspan; $i++) { $skipTime=$b->start_time->copy()
+            ->addMinutes($i * $slotMinutes)
+            ->format('H:i');
 
-                    $skipMap[$roomSlug][$skipTime] = true;
-                }
+            $skipMap[$roomSlug][$skipTime] = true;
             }
-        @endphp
-        
-        <input type="text" class="form-control flatpickr" placeholder="Choose Date" value="{{ date('d M Y', strtotime($year.'-'.$month.'-'.$day)) }}">
+            }
+            @endphp
 
-        <div class="table-responsive">
-            <table class="table table-bordered text-nowrap">
-                <thead>
-                    <tr>
-                        <th width="5%" class=" "></th>
-                        @foreach ($rooms as $room)
-                        <th class=" room-header-cell">
-                            <a href="">
-                                {{-- {{ $room->location->name }} <br /> --}}
-                                {{-- {{ $room->name }} --}}
+            <input type="text" class="form-control flatpickr" placeholder="Choose Date"
+                value="{{ date('d M Y', strtotime($year.'-'.$month.'-'.$day)) }}">
 
-                                <span class="d-none d-md-inline">{{ $room->name }}</span>
-                                <span class="d-md-none">
-                                    {{ Str::limit($room->name, 16, '') }}
-                                </span>
-                            </a>
-                        </th>
-                        @endforeach
-                    </tr>
-                    @foreach ($timeRanges as $range)
-                    <tr>
-                        <td class="" style="vertical-align: top;">
-                            {{ $range }}
-                        </td>
-                        @if( $range !== '17:00' )
+            <div class="table-responsive">
+                <table class="table table-bordered text-nowrap">
+                    <thead>
+                        <tr>
+                            <th width="5%" class=" "></th>
                             @foreach ($rooms as $room)
-                                @if (!empty($skipMap[$room->slug][$range]))
-                                    @continue
-                                @endif
-            
-                                @if (!empty($bookedMap[$room->slug][$range]))
-                                @php $booking = $bookedMap[$room->slug][$range]; @endphp
-            
-                                <td class="text-center align-middle text-white booked-cell bg-primary"
-                                    rowspan="{{ $booking['rowspan'] }}" data-bs-toggle="modal"
-                                    data-bs-target="#EditBookingMeetingRoomModal" data-r="{{ $room->slug }}"
-                                    data-y="{{ $year }}" data-m="{{ $month }}" data-d="{{ $day }}" data-t="{{ $range }}"
-                                    data-sb="{{ $range }}" data-eb="{{ $booking['end'] }}"
-                                    data-desc=@json($booking['description']) data-i="{{ $booking['id'] }}"
-                                    style="cursor: pointer;">
-                                    <strong>BOOKED</strong><br>
-                                    {{ $range }} – {{ $booking['end'] }} <br>
-                                    {{ $booking['by'] }} <br>
-                                    {{ $booking['description'] }}
-                                </td>
-            
-                                {{-- ✅ available slot --}}
-                                @else
-                                <td class="text-center hoverCell" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#bookingMeetingRoomModal"
-                                    data-r="{{ $room->slug }}" data-y="{{ $year }}" data-m="{{ $month }}"
-                                    data-d="{{ $day }}" data-t="{{ $range }}">
-                                    <div>
-                                        &nbsp;
-                                    </div>
-                                </td>
-                                @endif
+                            <th class=" room-header-cell">
+                                <a href="">
+                                    <span class="d-none d-md-inline">{{ $room->name }}</span>
+                                    <span class="d-md-none">
+                                        {{ Str::limit($room->name, 16, '') }}
+                                    </span>
+                                </a>
+                            </th>
                             @endforeach
-                        @endif
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+                        </tr>
+                        @foreach ($timeRanges as $range)
+                        <tr>
+                            <td class="" style="vertical-align: top;">
+                                {{ $range }}
+                            </td>
+                            @if( $range !== '17:00' )
+                                @foreach ($rooms as $room)
+                                    @if (!empty($skipMap[$room->slug][$range]))
+                                    @continue
+                                    @endif
+
+                                    @if (!empty($bookedMap[$room->slug][$range]))
+                                    @php $booking = $bookedMap[$room->slug][$range]; @endphp
+
+                                    <td class="text-center align-middle text-white booked-cell bg-primary"
+                                        rowspan="{{ $booking['rowspan'] }}" data-bs-toggle="modal"
+                                        data-bs-target="#EditBookingMeetingRoomModal" 
+                                        data-r="{{ $room->slug }}"
+                                        data-room_id="{{ $room->id }}" data-y="{{ $year }}" data-m="{{ $month }}"
+                                        data-d="{{ $day }}" data-t="{{ $range }}" data-sb="{{ $range }}"
+                                        data-eb="{{ $booking['end'] }}" data-desc=@json($booking['description'])
+                                        data-i="{{ $booking['id'] }}" data-nik_booking="{{ $booking['nik'] }}"
+                                        data-username_booking="{{ $booking['name'] }}" style="cursor: pointer;"
+                                    >
+                                        <strong>BOOKED</strong><br>
+                                        {{ $range }} – {{ $booking['end'] }} <br>
+                                        {{ $booking['by'] }} <br>
+                                        {{ $booking['description'] }}
+                                    </td>
+
+                                    {{-- ✅ available slot --}}
+                                    @else
+                                    <td class="text-center hoverCell" style="cursor: pointer;" data-bs-toggle="modal"
+                                        data-bs-target="#bookingMeetingRoomModal" data-r="{{ $room->slug }}"
+                                        data-room_id="{{ $room->id }}" data-y="{{ $year }}" data-m="{{ $month }}"
+                                        data-d="{{ $day }}" data-t="{{ $range }}">
+                                        <div>
+                                            &nbsp;
+                                        </div>
+                                    </td>
+                                    @endif
+                                @endforeach
+                            @endif
+                        </tr>
+                        @endforeach
+                        </tbody>
+                </table>
+            </div>
     </div>
 </div>
 
@@ -129,9 +132,9 @@
 
                 <div class="modal-body">
 
-                    <div class="form-group">
+                    <div class="form-group mt-2">
                         <label for="stime">Start Time</label>
-                        <select name="stime" id="stime" class="form-control">
+                        <select name="stime" id="stime" class="form-control" required>
                             <option value="">-- Select Time --</option>
                             @foreach ($timeRanges as $time)
                             <option value="{{ $time }}">{{ $time }}</option>
@@ -139,22 +142,57 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mt-2">
                         <label for="etime">End Time</label>
-                        <select name="etime" id="etime" class="form-control">
+                        <select name="etime" id="etime" class="form-control" required>
                             <option value="">-- Select Time --</option>
                         </select>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mt-2">
                         <label for="description">Description</label>
-                        <textarea name="description" id="" cols="30" rows="10" class="form-control"></textarea>
+                        <textarea name="description" id="" cols="30" rows="10" class="form-control" required></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="participant">Participant</label>
-                        <input type="text" name="participant" id="participant" class="form-control">
+                    <div class="form-group mt-2">
+                        <label for="description">Usage Type :</label>
+                        <br />
+                        <div class="form-check form-check-inline mt-4">
+                            <input class="form-check-input" type="radio" name="usage_type" id="usage_type_meeting"
+                                value="Meeting" required>
+                            <label class="form-check-label" for="usage_type_meeting">Meeting</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="usage_type" id="usage_type_interview"
+                                value="Interview">
+                            <label class="form-check-label" for="usage_type_interview">Interview</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="usage_type" id="usage_type_other"
+                                value="Other">
+                            <label class="form-check-label" for="usage_type_other">Other</label>
+                        </div>
                     </div>
+
+                    {{-- <div class="form-group mt-2">
+                        <label for="participant">
+                            Participant
+                            <span data-bs-toggle="tooltip" data-bs-offset="0,6" data-bs-placement="top"
+                                data-bs-html="true"
+                                data-bs-original-title="&lt;i class='icon-base bx bx-info icon-xs' &gt;&lt;/i&gt; &lt;span&gt;Email yang ditambahkan akan menerima notifikasi undangan meeting ini.&lt;/span&gt;">
+                                (Optional)
+                            </span>
+                        </label>
+                        <div class="col-md-6 select2-primary">
+                            <label class="form-label" for="multicol-language">Language</label>
+                            <select id="multicol-language" class="select2 form-select" multiple>
+                                <option value="en" selected>English</option>
+                                <option value="fr" selected>French</option>
+                                <option value="de">German</option>
+                                <option value="pt">Portuguese</option>
+                            </select>
+                        </div>
+                    </div> --}}
                 </div>
 
                 <div class="modal-footer">
@@ -230,10 +268,13 @@
 </div>
 @endsection
 @section('script')
+
 <script>
     $(document).ready(function () {
         const timeRanges = @json($timeRanges);
         const booked = @json($booked);
+
+        $('.select2').select2();
 
         flatpickr(".flatpickr", {
             // inline: true,
@@ -257,15 +298,21 @@
         });
 
         $('#bookingMeetingRoomModal').on('show.bs.modal', function (event) {
-            const button = $(event.relatedTarget); // clicked div
+            const button    = $(event.relatedTarget); // clicked div
             const room_slug = button.data('r');
-            const year   = button.data('y');
-            const month  = button.data('m');
-            const day    = button.data('d');
-            const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-            const time   = button.data('t');
-            const room   = room_slug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
-            const modal = $(this);
+            const year      = button.data('y');
+            const month     = button.data('m');
+            const day       = button.data('d');
+            const dateStr   = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            const time      = button.data('t');
+            const room      = room_slug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
+            const modal     = $(this);
+
+            $('.modal-footer').show();
+            $('#e_stime').attr('disabled', false);
+            $('#e_etime').attr('disabled', false);
+            $('#e_description').attr('disabled', false);
+            $('#e_participant').attr('disabled', false);
 
             // Change modal title
             modal.find('.modal-title').text('Booking Room ' + room);            
@@ -275,25 +322,45 @@
             modal.find('.day').val(day);
             modal.find('.time').val(time);
 
-            generateStartTimes(time, dateStr, room_slug);
+            generateStartTimes(room_slug);
             $('#stime').val(time);
             generateEndTimes(time, dateStr, room_slug);
         });
 
         $('#EditBookingMeetingRoomModal').on('show.bs.modal', function (event) {
-            const button = $(event.relatedTarget); // clicked div
-            const room_slug = button.data('r');
-            const year   = button.data('y');
-            const month  = button.data('m');
-            const day    = button.data('d');
-            const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-            const time   = button.data('t');
-            const room   = room_slug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
-            const start_booking = button.data('sb');
-            const end_booking = button.data('eb');
-            const description = button.data('desc');
-            const modal = $(this);
-            const idBooking = button.data('i');
+            const button            = $(event.relatedTarget); // clicked div
+            const room_id           = button.data('room_id');
+            const room_slug         = button.data('r');
+            const year              = button.data('y');
+            const month             = button.data('m');
+            const day               = button.data('d');
+            const dateStr           = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            const time              = button.data('t');
+            const room              = room_slug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
+            const start_booking     = button.data('sb');
+            const end_booking       = button.data('eb');
+            const description       = button.data('desc');
+            const modal             = $(this);
+            const idBooking         = button.data('i');
+            const nik_booking       = button.data('nik_booking');
+            const username_booking  = button.data('username_booking');
+            const nik_login         = parseInt(@js(auth()->user()->NIK));
+
+            $('.modal-footer').show();
+            $('#e_stime').attr('disabled', false);
+            $('#e_etime').attr('disabled', false);
+            $('#e_description').attr('disabled', false);
+            $('#e_participant').attr('disabled', false);
+            modal.find('.modal-title').text('Edit Booking Room ' + room);
+
+            if( nik_booking !== nik_login ){
+                $('.modal-footer').hide();
+                $('#e_stime').attr('disabled', true);
+                $('#e_etime').attr('disabled', true);
+                $('#e_description').attr('disabled', true);
+                $('#e_participant').attr('disabled', true);
+                modal.find('.modal-title').text(`Booked By : ${username_booking}`);
+            }
 
             $('#e_stime').val(start_booking);
             $('#e_etime').val(end_booking);
@@ -303,8 +370,7 @@
             routeUpdate = routeUpdate.replace('__ID__', idBooking);
 
             // Change modal title
-            modal.find('#formEditAction').attr('action', routeUpdate);
-            modal.find('.modal-title').text('Edit Booking Room ' + room);            
+            modal.find('#formEditAction').attr('action', routeUpdate);            
             modal.find('.room').val(room_slug);
             modal.find('.year').val(year);
             modal.find('.month').val(month);
@@ -312,34 +378,31 @@
             modal.find('.time').val(time);
             modal.find('.idBooking').val(idBooking);
 
-            generateStartTimes(time, dateStr, room_slug, idBooking);
+            generateStartTimes(room_slug, idBooking, room_id);
             $('#e_stime').val(time);
-            generateEndTimes(time, dateStr, room_slug, idBooking);
+            generateEndTimes(time, dateStr, room_slug, idBooking, room_id);
             $('#e_etime').val(end_booking);
-
-
-            // TODO: Harusnya yang bukan punya sendiri, tidak bisa edit.
         });
 
         $('#stime').on('change', function() {
-            const stime = $(this).val();
-            const year = $('#bookingMeetingRoomModal .year').val();
-            const month = $('#bookingMeetingRoomModal .month').val();
-            const day = $('#bookingMeetingRoomModal .day').val();
+            const stime     = $(this).val();
+            const year      = $('#bookingMeetingRoomModal .year').val();
+            const month     = $('#bookingMeetingRoomModal .month').val();
+            const day       = $('#bookingMeetingRoomModal .day').val();
             const room_slug = $('#bookingMeetingRoomModal .room').val();
-            const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            const dateStr   = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
 
             generateEndTimes(stime, dateStr, room_slug);
         });
 
         $('#e_stime').on('change', function() {
-            const stime = $(this).val();
-            const year = $('#EditBookingMeetingRoomModal .year').val();
-            const month = $('#EditBookingMeetingRoomModal .month').val();
-            const day = $('#EditBookingMeetingRoomModal .day').val();
+            const stime     = $(this).val();
+            const year      = $('#EditBookingMeetingRoomModal .year').val();
+            const month     = $('#EditBookingMeetingRoomModal .month').val();
+            const day       = $('#EditBookingMeetingRoomModal .day').val();
             const room_slug = $('#EditBookingMeetingRoomModal .room').val();
             const idBooking = parseInt($('#EditBookingMeetingRoomModal .idBooking').val());
-            const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            const dateStr   = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
 
             generateEndTimes(stime, dateStr, room_slug, idBooking);
         });
@@ -349,7 +412,7 @@
             return h * 60 + m;
         }
 
-        function generateStartTimes(time, selectedDate, room_slug, idBooking = null) {
+        function generateStartTimes(room_slug, idBooking = null, room_id = null) {
             if( !idBooking ) {
                 const stimeSelect = $('#stime');
                 stimeSelect.empty();
@@ -415,7 +478,7 @@
             }
         }
         
-        function generateEndTimes(stime, selectedDate, room_slug, idBooking = null) {
+        function generateEndTimes(stime, selectedDate, room_slug, idBooking = null, room_id = null) {
             if( !idBooking ) {
                 const etimeSelect = $('#etime');
                 etimeSelect.empty();
@@ -478,24 +541,26 @@
                 booked.forEach(item => {
                     if( item.id === idBooking ) return;
 
-                    let bookedStartTime = toMinutes(item.start_time);
-                    let bookedEndTime = toMinutes(item.end_time);                    
-                    
-                    let selectedStartTime = toMinutes(stime);
-                    let end   = toMinutes('17:00');
+                    if( room_id === item.meeting_room_id ){
+                        let bookedStartTime = toMinutes(item.start_time);
+                        let bookedEndTime = toMinutes(item.end_time);                    
+                        
+                        let selectedStartTime = toMinutes(stime);
+                        let end   = toMinutes('17:00');
 
-                    // kalo waktu yang di pilih >= waktu booking yang lain. misal waktu book : 09:00 - 10:00 waktu yang di pilih 10:00.
-                    // maka endtime nya endtime dari waktu booking (10:00), karna waktu yang lain masih bisa di pilih.
-                    // kalo waktu yang di pilih < waktu booking yang lain. misal waktu book : 09:00 - 10:00 waktu yang di pilih 08:00.
-                    // maka endtime nya 17:00, karna tidak mungkin book melewati jam 09:00. maka select box hanya menampilkan 08:30, 09:00
-                    if( selectedStartTime >= bookedEndTime ) {
-                        end = (bookedEndTime - 30);
-                    }
+                        // kalo waktu yang di pilih >= waktu booking yang lain. misal waktu book : 09:00 - 10:00 waktu yang di pilih 10:00.
+                        // maka endtime nya endtime dari waktu booking (10:00), karna waktu yang lain masih bisa di pilih.
+                        // kalo waktu yang di pilih < waktu booking yang lain. misal waktu book : 09:00 - 10:00 waktu yang di pilih 08:00.
+                        // maka endtime nya 17:00, karna tidak mungkin book melewati jam 09:00. maka select box hanya menampilkan 08:30, 09:00
+                        if( selectedStartTime >= bookedEndTime ) {
+                            end = (bookedEndTime - 30);
+                        }
 
-                    while (bookedStartTime <= end) {
-                        bookedStartTime += 30;
-                        bookedTime.push(fromMinutes(bookedStartTime));
-                    }
+                        while (bookedStartTime <= end) {
+                            bookedStartTime += 30;
+                            bookedTime.push(fromMinutes(bookedStartTime));
+                        }
+                    }                    
                 });
 
                 bookedTime = [...new Set(bookedTime)];

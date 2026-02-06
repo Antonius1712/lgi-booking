@@ -28,6 +28,13 @@ class User extends Model implements Authenticatable
 
     public $incrementing = false;
 
+    public $timestamps = false;
+
+    public function UserGroup()
+    {
+        return $this->hasOne(LgiGlobalUserGroup::class, 'UserId', 'NIK');
+    }
+
     public function initials()
     {
         // Assuming you have a Name or FullName column

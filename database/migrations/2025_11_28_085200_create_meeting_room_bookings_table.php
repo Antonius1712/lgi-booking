@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bookings', function (Blueprint $table) {
+        Schema::create('meeting_room_bookings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('meeting_room_id')->constrained();
             $table->string('nik');
@@ -20,15 +20,13 @@ return new class extends Migration
             $table->time('start_time');
             $table->time('end_time');
             $table->string('status')->default('confirmed');
-            $table->string('title')->nullable();
-            $table->string('event_url')->nullable();
             $table->string('location')->nullable();
             $table->text('description')->nullable();
-            $table->enum('calendar_type', ['Meeting', 'Interview'])->default('Meeting');
+            $table->text('usage_type')->nullable();
             $table->json('guest_emails')->nullable(); // ← NEW: Store invited guests
             $table->timestamps();
 
-            $table->unique(['meeting_room_id', 'booking_date', 'time_slot']);
+            $table->unique(['meeting_room_id', 'booking_date', 'time_slot'], 'mr_booking_unique');
         });
     }
 
@@ -37,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bookings');
+        Schema::dropIfExists('meeting_room_bookings');
     }
 };

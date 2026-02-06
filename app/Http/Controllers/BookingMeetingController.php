@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\CalendarType;
-use App\Models\Booking;
+use App\Actions\BookingMeetingRoomStoreAction;
+use App\Actions\BookingMeetingRoomUpdateAction;
+use App\Enums\UsageTypeEnum;
+use App\Http\Requests\BookingMeetingRoomStoreRequest;
+use App\Http\Requests\BookingMeetingRoomUpdateRequest;
 use App\Models\MeetingRoom;
+use App\Models\MeetingRoomBooking;
 use App\Services\MiniCalendars;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use phpDocumentor\Reflection\Types\Integer;
 
 class BookingMeetingController extends Controller
 {
@@ -29,7 +35,7 @@ class BookingMeetingController extends Controller
         $day = $request->day ?? now()->format('d');
         $date = Carbon::parse("$year-$month-$day")->format('Y-m-d');
 
-        $calendarTypes = CalendarType::cases();
+        $calendarTypes = UsageTypeEnum::cases();
         $timeSlots = $this->timeSlot();
         $timeRanges = $this->timeRange();
 
@@ -39,12 +45,7 @@ class BookingMeetingController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
-        // $booked = Booking::query()
-        //     ->where('booking_date', $date)
-        //     ->select('booking_date', 'start_time', 'end_time')
-        // ->get();
-
-        $booked = Booking::query()
+        $booked = MeetingRoomBooking::query()
             ->where('booking_date', $date)
             ->with(['meetingRoom:id,slug', 'user:NIK,Name'])
             ->get(['id', 'nik', 'meeting_room_id', 'start_time', 'end_time', 'description']);
@@ -52,60 +53,16 @@ class BookingMeetingController extends Controller
         return view('booking.meeting-room.index', compact('calendarTypes', 'rooms', 'timeSlots', 'timeRanges', 'booked', 'miniCalendars'));
     }
 
-    public function store(Request $request)
+    public function store(BookingMeetingRoomStoreRequest $request, BookingMeetingRoomStoreAction $action): RedirectResponse
     {
-        $room = $request->room;
-        $year = $request->year;
-        $month = $request->month;
-        $day = $request->day;
-        $time = $request->time;
-        $stime = $request->stime;
-        $etime = $request->etime;
-        $description = $request->description;
-
-        $room_id = MeetingRoom::where('slug', $room)->value('id');
-        $booking_date = Carbon::parse("$year-$month-$day")->format('Y-m-d');
-        $time_slot = "$stime - $etime";
-        $start_time = $stime;
-        $end_time = $etime;
-
-        Booking::create([
-            'meeting_room_id' => $room_id,
-            'nik' => auth()->user()->NIK,
-            'booking_date' => $booking_date,
-            'time_slot' => $time_slot,
-            'start_time' => $start_time,
-            'end_time' => $end_time,
-            'status' => 'Booked',
-            'description' => $description,
-        ]);
+        $action->handle($request);
 
         return back()->with(['success' => 'Sukses']);
     }
 
-    public function update($id, Request $request)
+    public function update(Integer $id, BookingMeetingRoomUpdateRequest $request, BookingMeetingRoomUpdateAction $action): RedirectResponse
     {
-        $room = $request->room;
-        $year = $request->year;
-        $month = $request->month;
-        $day = $request->day;
-        $time = $request->time;
-        $stime = $request->e_stime;
-        $etime = $request->e_etime;
-        $description = $request->e_description;
-
-        $booking_date = Carbon::parse("$year-$month-$day")->format('Y-m-d');
-        $time_slot = "$stime - $etime";
-        $start_time = $stime;
-        $end_time = $etime;
-
-        Booking::where('id', $id)->update([
-            'time_slot' => $time_slot,
-            'start_time' => $start_time,
-            'end_time' => $end_time,
-            'status' => 'Booked',
-            'description' => $description,
-        ]);
+        $action->handle($id, $request);
 
         return back()->with(['success' => 'Sukses']);
     }
@@ -143,7 +100,7 @@ class BookingMeetingController extends Controller
             return response()->json([], 404);
         }
 
-        $bookedTimes = Booking::where('meeting_room_id', $roomId)
+        $bookedTimes = MeetingRoomBooking::where('meeting_room_id', $roomId)
             ->where('booking_date', $request->date)
             ->where('status', 'confirmed')
             ->pluck('start_time')
