@@ -22,7 +22,7 @@ class BookingDriverStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'driver' => ['required'],
+            'driver_name' => ['required'],
             'year' => ['required'],
             'month' => ['required'],
             'day' => ['required'],

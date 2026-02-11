@@ -35,5 +35,3 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/search-user-by-nik', [ServiceController::class, 'searchUserByNik'])->name('search-user-by-nik');
     });
 });
-
-// require __DIR__.'/settings.php';

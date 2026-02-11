@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('status');
 
             $table->text('destination');
-            
+
             $table->dateTime('scheduled_pickup_at');
             $table->date('scheduled_pickup_date');
             $table->time('scheduled_pickup_time');
@@ -27,9 +27,9 @@ return new class extends Migration
             $table->dateTime('scheduled_end_at');
             $table->date('scheduled_end_date');
             $table->time('scheduled_end_time');
-            
+
             $table->string('scheduled_time_slot');
-            
+
             $table->bigInteger('scheduled_duration');
             $table->text('purpose_of_trip');
 

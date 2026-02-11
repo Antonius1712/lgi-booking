@@ -14,7 +14,7 @@ class DriverBooking extends Model
         'status',
 
         'destination',
-        
+
         'scheduled_pickup_at',
         'scheduled_pickup_date',
         'scheduled_pickup_time',
@@ -22,9 +22,9 @@ class DriverBooking extends Model
         'scheduled_end_at',
         'scheduled_end_date',
         'scheduled_end_time',
-        
+
         'scheduled_time_slot',
-        
+
         'scheduled_duration',
         'purpose_of_trip',
 
@@ -52,12 +52,12 @@ class DriverBooking extends Model
 
     protected $casts = [
         // Scheduled pickup
-        'scheduled_pickup_at'   => 'datetime:Y-m-d H:i:s',
+        'scheduled_pickup_at' => 'datetime:Y-m-d H:i:s',
         'scheduled_pickup_date' => 'date:Y-m-d',
         'scheduled_pickup_time' => 'datetime:H:i:s',
 
         // Scheduled end
-        'scheduled_end_at'   => 'datetime:Y-m-d H:i:s',
+        'scheduled_end_at' => 'datetime:Y-m-d H:i:s',
         'scheduled_end_date' => 'date:Y-m-d',
         'scheduled_end_time' => 'datetime:H:i:s',
 
@@ -89,7 +89,7 @@ class DriverBooking extends Model
     public static function generateBookingNumber(): string
     {
         $date = now()->format('Ymd');
-        
+
         $lastBooking = self::whereDate('created_at', today())
             ->orderByDesc('id')
             ->first();

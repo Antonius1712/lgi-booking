@@ -13,7 +13,10 @@ use App\Models\DriverBooking;
 use App\Models\MeetingRoom;
 use App\Models\User;
 use Carbon\Carbon;
+use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class BookingDriverController extends Controller
 {
@@ -51,13 +54,13 @@ class BookingDriverController extends Controller
                 })
                     ->where('GroupCode', RoleEnum::DRIVER);
             })
-        ->get();
+            ->get();
 
         // dd($date);
         $booked = DriverBooking::query()
             ->where('scheduled_pickup_date', $date)
             ->with(['user:NIK,Name', 'driver:NIK,Name'])
-        ->get();
+            ->get();
 
         // dd($booked);
         // $booked = [];
@@ -68,18 +71,32 @@ class BookingDriverController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(BookingDriverStoreRequest $request, BookingDriverStoreAction $action)
+    public function store(BookingDriverStoreRequest $request, BookingDriverStoreAction $action): RedirectResponse
     {
-        $action->handle($request);
+        try {
+            $action->handle($request);
+        } catch (Exception $e) {
+            Log::error($e->getLine());
+            Log::error($e->getFile());
+            Log::error($e->getMessage());
+
+            return back()->withErrors(['error' => 'error']);
+        }
+
         return back()->with(['success' => 'Sukses']);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(BookingDriverUpdateRequest $request, string $id, BookingDriverUpdateAction $action)
+    public function update(BookingDriverUpdateRequest $request, string $id, BookingDriverUpdateAction $action): RedirectResponse
     {
-        $action->handle($id, $request);
+        try {
+            $action->handle($id, $request);
+        } catch (Exception $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+
         return back()->with(['success' => 'Sukses']);
     }
 

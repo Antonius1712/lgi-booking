@@ -250,7 +250,7 @@
 
     <script>
         let sessionSuccess = @js(session('success'));
-        let sessionError = @js(session('error'));
+        let sessionError = @js($errors->all());
         let sessionInfo = @js(session('info'));
         let sessionWarning = @js(session('warning'));
 
@@ -263,9 +263,11 @@
             }
 
             if( sessionError ){
-                notyf.open({
-                    type: 'error',
-                    message: sessionError
+                sessionError.forEach(err => {
+                    notyf.open({
+                        type: 'error',
+                        message: err
+                    });
                 });
             }
 

@@ -26,7 +26,7 @@ class DriverController extends Controller
                 })
                     ->where('GroupCode', RoleEnum::DRIVER);
             })
-        ->get();
+            ->get();
 
         return view('admin.driver.index', compact('drivers'));
     }

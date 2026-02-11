@@ -14,7 +14,7 @@
             foreach ($booked as $book) {
                 if (!$book->driver) continue;
 
-                $driver = $book->driver->Name;
+                $driver = str()->slug($book->driver->Name);
 
                 $start = $book->scheduled_pickup_time->format('H:i');
                 $end = $book->scheduled_end_time->format('H:i');
@@ -29,7 +29,8 @@
                     'rowspan' => $rowspan,
                     'scheduled_pickup_time' => $start,
                     'scheduled_end_time' => $end,
-                    'purpose_of_trip' => $book->purpose_of_trip
+                    'purpose_of_trip' => $book->purpose_of_trip,
+                    'destination' => $book->destination
                 ];
 
                 // dd($bookedMap);
@@ -72,18 +73,22 @@
                         </td>
                         @if( $range !== '17:00' )
                             @foreach ($drivers as $driver)
-                                @if (!empty($skipMap[$driver->Name][$range]))
+                                @php
+                                    $driverSlug = str()->slug($driver->Name);
+                                @endphp
+                                @if (!empty($skipMap[$driverSlug][$range]))
                                 @continue
                                 @endif
 
-                                @if (!empty($bookedMap[$driver->Name][$range]))
-                                    @php $booking = $bookedMap[$driver->Name][$range]; @endphp
+                                @if (!empty($bookedMap[$driverSlug][$range]))
+                                    @php $booking = $bookedMap[$driverSlug][$range]; @endphp
 
                                     <td class="text-center align-middle text-white booked-cell bg-primary"
                                         rowspan="{{ $booking['rowspan'] }}" data-bs-toggle="modal"
                                         data-bs-target="#EditDriverBookingModal"
                                         data-driver_nik="{{ $driver->NIK }}"
-                                        data-slug="{{ str()->slug($driver->Name) }}"
+                                        data-driver_name="{{ $driver->Name }}"
+                                        data-slug="{{ $driverSlug }}"
                                         data-year="{{ $year }}"
                                         data-month="{{ $month }}"
                                         data-day="{{ $day }}"
@@ -94,6 +99,8 @@
                                         data-purpose_of_trip="{{ $booking['purpose_of_trip'] }}"
                                         data-booking_id="{{ $booking['booking_id'] }}"
                                         data-user_nik="{{ $booking['user_nik'] }}"
+                                        data-name="{{ $booking['name'] }}"
+                                        data-destination="{{ $booking['destination'] }}"
                                     >
                                         <strong>BOOKED</strong><br>
                                         {{ $booking['scheduled_pickup_time'] }} – {{ $booking['scheduled_end_time'] }} <br>
@@ -139,7 +146,7 @@
             </div>
             <form action="{{ route('booking.driver.store') }}" method="post">
                 @csrf
-                <input type="hidden" class="driver" name="driver">
+                <input type="hidden" class="driver_slug" name="driver_slug">
                 <input type="hidden" class="driver_name" name="driver_name">
                 <input type="hidden" class="driver_nik" name="driver_nik">
                 <input type="hidden" class="year" name="year">
@@ -203,19 +210,18 @@
             <form id="formEditAction" action="{{ route('booking.driver.store') }}" method="post">
                 @csrf
                 @method('put')
-                <input type="hidden" class="driver_slug" name="driver_slug">
-                <input type="hidden" class="driver_nik" name="driver_nik">
-                <input type="hidden" class="booking_id" name="booking_id">
-                <input type="hidden" class="year" name="year">
-                <input type="hidden" class="month" name="month">
-                <input type="hidden" class="day" name="day">
-                <input type="hidden" class="time" name="time">
+                <input type="hidden" class="edit_driver_slug" name="driver_slug">
+                <input type="hidden" class="edit_driver_name" name="driver_name">
+                <input type="hidden" class="edit_driver_nik" name="driver_nik">
+                <input type="hidden" class="edit_year" name="year">
+                <input type="hidden" class="edit_month" name="month">
+                <input type="hidden" class="edit_day" name="day">
+                <input type="hidden" class="edit_time" name="time">
 
-                <div class="modal-body">
-
+                <div class="modal-body position-relative">
                     <div class="form-group">
-                        <label for="e_stime">Start Time</label>
-                        <select name="e_stime" id="edit_stime" class="form-control">
+                        <label for="edit_stime">Scheduled Pickup At</label>
+                        <select name="stime" id="edit_stime" class="form-control">
                             <option value="">-- Select Time --</option>
                             @foreach ($timeRanges as $time)
                             <option value="{{ $time }}">{{ $time }}</option>
@@ -224,8 +230,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="e_etime">End Time</label>
-                        <select name="e_etime" id="edit_etime" class="form-control">
+                        <label for="edit_etime">Scheduled End At</label>
+                        <select name="etime" id="edit_etime" class="form-control" required>
                             <option value="">-- Select Time --</option>
                             @foreach ($timeRanges as $time)
                             <option value="{{ $time }}">{{ $time }}</option>
@@ -234,19 +240,27 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="e_description">Description</label>
-                        <textarea name="e_description" id="edit_description" cols="30" rows="10"
-                            class="form-control"></textarea>
+                        <label for="edit_destination">Destination</label>
+                        <input type="text" name="destination" id="edit_destination" class="form-control" value="" placeholder="Cari Nama Gedung / Jalan" required>
+                        <ul class="dropdown-menu autocomplete-dropdown w-100" id="destinationDropdown">
+                            <!-- Results will be dynamically inserted here -->
+                        </ul>
                     </div>
 
                     <div class="form-group">
-                        <label for="e_participant">Participant</label>
-                        <input type="text" name="e_participant" id="edit_participant" class="form-control">
+                        <label for="edit_purpose_of_trip">Purpose of Trip</label>
+                        <textarea name="purpose_of_trip" id="edit_purpose_of_trip" cols="30" rows="10" class="form-control" placeholder="Enter Purpose of Trip" required></textarea>
                     </div>
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    
+                    <form id="formCancelAction" method="post">
+                        @csrf
+                        @method('delete')
+                        <button type="submit" class="btn btn-primary modal-footer-button-cancel">Cancel Booking</button>
+                    </form>
                     <button type="submit" class="btn btn-primary modal-footer-button-save">Save changes</button>
                 </div>
             </form>
@@ -291,7 +305,7 @@
     const timeRanges = @json($timeRanges);
     const booked = @json($booked);
     const searchMapUrl = @js(config('map.nominatim.url'));
-    
+
     let highlightedIndex = -1;
     let filteredResults = [];
     let debounceTimer = null;
@@ -372,16 +386,16 @@
     });
 
     $('#DriverBookingModal').on('show.bs.modal', function (event) {
-        const button        = $(event.relatedTarget); // clicked div
-        const slug          = button.data('slug');
-        const year          = button.data('year');
-        const month         = button.data('month');
-        const day           = button.data('day');
-        const dateStr       = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const time_range    = button.data('time_range');
-        const driver_name   = button.data('driver_name');
-        const driver_nik    = button.data('driver_nik')
-        const modal         = $(this);
+        const button                = $(event.relatedTarget); // clicked div
+        const slug                  = button.data('slug');
+        const year                  = button.data('year');
+        const month                 = button.data('month');
+        const day                   = button.data('day');
+        const dateStr               = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const selected_time_range   = button.data('time_range');
+        const driver_name           = button.data('driver_name');
+        const driver_nik            = button.data('driver_nik')
+        const modal                 = $(this);
 
         $('.modal-footer').show();
         $('#edit_stime').attr('disabled', false);
@@ -397,66 +411,80 @@
         modal.find('.year').val(year);
         modal.find('.month').val(month);
         modal.find('.day').val(day);
-        modal.find('.time').val(time_range);
+        modal.find('.time').val(selected_time_range);
 
-        generateStartTimes(time_range, dateStr, slug);
-        $('#stime').val(time_range);
-        generateEndTimes(time_range, dateStr, slug);
+        generateStartTimes(slug);
+        // generateStartTimes(time_range, dateStr, slug);
+        $('#stime').val(selected_time_range);
+        generateEndTimes(selected_time_range, slug);
+        // generateEndTimes(time_range, dateStr, slug);
     });
 
     $('#EditDriverBookingModal').on('show.bs.modal', function (event) {
         const button                    = $(event.relatedTarget); // clicked div
         const modal                     = $(this);
         const driver_nik                = button.data('driver_nik');
+        const driver_name               = button.data('driver_name');
         const slug                      = button.data('slug');
         const year                      = button.data('year');
         const month                     = button.data('month');
         const day                       = button.data('day');
         const dateStr                   = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const time_range                = button.data('time_range');
+        const selected_time_range       = button.data('time_range');
         const scheduled_pickup_time     = button.data('scheduled_pickup_time');
         const scheduled_end_time        = button.data('scheduled_end_time');
         const purpose_of_trip           = button.data('purpose_of_trip');
         const booking_id                = button.data('booking_id');
         const user_nik                  = button.data('user_nik');
+        const name                      = button.data('name');
         const nik_login                 = parseInt(@js(auth()->user()->NIK));
+        const destination               = button.data('destination');
 
         $('.modal-footer').show();
         $('#edit_stime').attr('disabled', false);
         $('#edit_etime').attr('disabled', false);
-        $('#edit_description').attr('disabled', false);
-        $('#edit_participant').attr('disabled', false);
+        $('#edit_destination').attr('disabled', false);
+        $('#edit_purpose_of_trip').attr('disabled', false);
         modal.find('.modal-title').text('Edit Booking Driver ' + slug);
 
         if( user_nik !== nik_login ){
             $('.modal-footer').hide();
             $('#edit_stime').attr('disabled', true);
             $('#edit_etime').attr('disabled', true);
-            $('#edit_description').attr('disabled', true);
-            $('#edit_participant').attr('disabled', true);
-            modal.find('.modal-title').text(`Booked By : ${user_nik}`);
+            $('#edit_destination').attr('disabled', true);
+            $('#edit_purpose_of_trip').attr('disabled', true);
+            modal.find('.modal-title').text(`Booked By : ${name}`);
         }
 
         $('#edit_stime').val(scheduled_pickup_time);
         $('#edit_etime').val(scheduled_end_time);
         $('#edit_description').val(purpose_of_trip);
 
-        let routeUpdate = @js(route('booking.meeting-room.update', '__ID__'));
+        let routeUpdate = @js(route('booking.driver.update', '__ID__'));
         routeUpdate = routeUpdate.replace('__ID__', booking_id);
 
-        // Change modal title
-        modal.find('#formEditAction').attr('action', routeUpdate);            
-        modal.find('.driver_slug').val(slug);
-        modal.find('.driver_nik').val(slug);
-        modal.find('.booking_id').val(booking_id);
-        modal.find('.year').val(year);
-        modal.find('.month').val(month);
-        modal.find('.day').val(day);
-        modal.find('.time').val(scheduled_pickup_time);
+        let routeCancel = @js(route('booking.driver.destroy', '__ID__'));
+        routeCancel = routeCancel.replace('__ID__', booking_id);
 
-        generateStartTimes(time_range, dateStr, slug, booking_id, driver_nik);
-        $('#edit_stime').val(time_range);
-        generateEndTimes(time_range, dateStr, slug, booking_id, driver_nik);
+        // Change modal title
+        modal.find('#formEditAction').attr('action', routeUpdate);    
+        modal.find('#formCancelAction').attr('action', routeCancel);    
+        modal.find('.edit_driver_name').val(driver_name);
+        modal.find('.edit_driver_slug').val(slug);
+        modal.find('.edit_driver_nik').val(slug);
+        modal.find('.edit_booking_id').val(booking_id);
+        modal.find('.edit_year').val(year);
+        modal.find('.edit_month').val(month);
+        modal.find('.edit_day').val(day);
+        modal.find('.edit_time').val(scheduled_pickup_time);
+        modal.find('#edit_destination').val(destination);
+        modal.find('#edit_purpose_of_trip').html(purpose_of_trip);
+
+        generateStartTimes(slug, booking_id);
+        // generateStartTimes(time_range, dateStr, slug, booking_id, driver_nik);
+        $('#edit_stime').val(selected_time_range);
+        generateEndTimes(selected_time_range, slug, booking_id)
+        // generateEndTimes(time_range, dateStr, slug, booking_id, driver_nik);
         $('#edit_etime').val(scheduled_end_time);
 
 
@@ -506,25 +534,15 @@
 
     $('#stime').on('change', function() {
         const stime = $(this).val();
-        const year = $('#bookingDriverModal .year').val();
-        const month = $('#bookingDriverModal .month').val();
-        const day = $('#bookingDriverModal .day').val();
-        const slug = $('#bookingDriverModal .room').val();
-        const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-
-        generateEndTimes(stime, dateStr, slug);
+        const slug = $('#DriverBookingModal .driver_slug').val();
+        generateEndTimes(stime, slug);
     });
 
     $('#edit_stime').on('change', function() {
         const stime = $(this).val();
-        const year = $('#EditBookingMeetingRoomModal .year').val();
-        const month = $('#EditBookingMeetingRoomModal .month').val();
-        const day = $('#EditBookingMeetingRoomModal .day').val();
-        const slug = $('#EditBookingMeetingRoomModal .room').val();
-        const idBooking = parseInt($('#EditBookingMeetingRoomModal .idBooking').val());
-        const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-
-        generateEndTimes(stime, dateStr, slug, idBooking);
+        const slug = $('#EditDriverBookingModal .driver_slug').val();
+        const idBooking = parseInt($('#EditDriverBookingModal .booking_id').val());
+        generateEndTimes(stime, slug, idBooking);
     });
 
     // Render results using Bootstrap dropdown-item classes
@@ -580,120 +598,106 @@
         return `${h}:${m}`;
     }
 
-    function generateStartTimes(time, selectedDate, slug, idBooking = null, room_id = null) {
+    function generateStartTimes(slug, idBooking = null) {
         if( !idBooking ) {
             const stimeSelect = $('#stime');
             stimeSelect.empty();
-            stimeSelect.append('<option value="">-- Select Time --</option>');
-
-            timeRanges.forEach(t => {
-                const tMinutes = toMinutes(t);
+            stimeSelect.append(`<option value=''>-- Select Time --</option>`);
+            timeRanges.forEach(time => {
+                const timeToMinutes = toMinutes(time);
                 let overlap = false;
 
-                for (let i = 0; i < booked.length; i++) {
-                    
-                    if (booked[i].driver.slug !== slug) continue;
+                slug = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-                    const bStart = toMinutes(booked[i].start_time);
-                    const bEnd   = toMinutes(booked[i].end_time);
+                for( const book of booked ) {
+                    if( book.driver.Name !== slug ) continue;
 
-                    // overlap rule for start time
-                    if (tMinutes >= bStart && tMinutes < bEnd) {
+                    const bookedTimeStart = toMinutes(book.scheduled_pickup_time);
+                    const bookedTimeEnd = toMinutes(book.scheduled_end_time);
+
+                    if( timeToMinutes >= bookedTimeStart && timeToMinutes < bookedTimeEnd ) {
                         overlap = true;
                         break;
                     }
                 }
 
-                // ❗ skip disabled start times
-                if (overlap) return;
-
+                if( overlap ) return;
                 stimeSelect.append(`<option value="${time}">${time}</option>`);
             });
         } else {
             const stimeSelect = $('#edit_stime');
             stimeSelect.empty();
-            stimeSelect.append('<option value="">-- Select Time --</option>');
+            stimeSelect.append(`<option value="">-- Select Time --</option>`);
 
             timeRanges.forEach(time => {
                 const timeToMinutes = toMinutes(time);
                 let overlap = false;
 
-                for (let i = 0; i < booked.length; i++) {
-                    
-                    if (booked[i].driver.Name.split(' ').join('-') !== slug) continue;
+                for( const book of booked ) {
+                    if( book.driver.Name.split(' ').join('-').toLowerCase() !== slug ) continue;
+                    const bookedTimeStart = toMinutes(book.scheduled_pickup_time);
+                    const bookedTimeEnd = toMinutes(book.scheduled_end_time);
 
-                    const booking_start = toMinutes(booked[i].scheduled_pickup_time);
-                    const booking_end   = toMinutes(booked[i].scheduled_end_time);
-
-                    // overlap rule for start time
-                    if( booked[i].id !== idBooking ){
-                        if (timeToMinutes >= booking_start && timeToMinutes < booking_end) {
+                    if( book.id !== idBooking ) {
+                        if( timeToMinutes >= bookedTimeStart && timeToMinutes < bookedTimeEnd ) {
                             overlap = true;
-                            // break;
                         }
                     }
 
-                    if( t === '17:00' ){
+                    if( time === '17:00' ) {
                         overlap = true;
                     }
                 }
 
-                // ❗ skip disabled start times
-                if (overlap) return;
-
+                if( overlap ) return;
                 stimeSelect.append(`<option value="${time}">${time}</option>`);
             });
         }
     }
 
-    function generateEndTimes(stime, dateStr, slug, booking_id = null, driver_nik = null) 
-    {
-        if( !booking_id ) {
+    function generateEndTimes(selectedStartTime, slug, idBooking = null) {
+        if( !idBooking ) {
             const etimeSelect = $('#etime');
+            const selectedStartTimeToMinutes = toMinutes(selectedStartTime);
+
             etimeSelect.empty();
-            etimeSelect.append('<option value="">-- Select Time --</option>');
+            etimeSelect.append(`<option value="">-- Select Time --</option>`);
 
-            if (!stime) return;
+            if(!selectedStartTime) return;
 
-            const startMinutes = toMinutes(stime);
-
-            for (let i = 0; i < timeRanges.length; i++) {
-                const etime = timeRanges[i];
-                const etimeMinutes = toMinutes(etime);
-
-                // End time must be AFTER start time
-                if (etimeMinutes <= startMinutes) continue;
-
+            for( const time of timeRanges ) {
+                const timeToMinutes = toMinutes(time);
+                if (timeToMinutes <= selectedStartTimeToMinutes) continue;
                 let disabled = false;
 
-                for (let j = 0; j < booked.length; j++) {
+                let bookedTimeStart = '';
+                let bookedTimeEnd = '';
+                
+                for (const book of booked) {
+                    if( book.driver.Name.split(' ').join('-').toLowerCase() !== slug ) continue;
+                    bookedTimeStart = toMinutes(book.scheduled_pickup_time);
+                    bookedTimeEnd = toMinutes(book.scheduled_end_time);
 
-                    if (booked[i].driver.Name.split(' ').join('-') !== slug) continue;
-
-                    const bookedStart = toMinutes(booked[j].scheduled_pickup_time);
-                    const bookedEnd   = toMinutes(booked[j].scheduled_end_time);
-
-                    // ❗ CORRECT overlap rule
-                    if (etimeMinutes > bookedStart && startMinutes < bookedEnd) {
+                    if( timeToMinutes > bookedTimeStart && timeToMinutes < bookedTimeEnd ) {
                         disabled = true;
                         break;
                     }
                 }
 
-                if (disabled) continue;
+                if ( disabled ) continue;
 
-                const durationMinutes = etimeMinutes - startMinutes;
-                const hours = Math.floor(durationMinutes / 60);
-                const mins  = durationMinutes % 60;
-
+                const durationInMinute = timeToMinutes - selectedStartTimeToMinutes;
+                const hours = Math.floor(durationInMinute / 60);
+                const minutes = durationInMinute % 60;
+                
                 let durationText = '';
-                if (hours) durationText += `${hours} Hour${hours > 1 ? 's' : ''} `;
-                if (mins)  durationText += `${mins} Minutes`;
+                if( hours ) durationText += `${hours} Hour${hours > 1 ? 's' : ''}`;
+                if( minutes ) durationText += ` ${minutes} Minutes`;
                 durationText = durationText.trim();
 
                 etimeSelect.append(`
-                    <option value="${etime}" ${disabled ? 'disabled' : ''}>
-                        ${etime} (${durationText})
+                    <option value="${time}" ${disabled ? 'disabled' : ''}>
+                        ${time} (${durationText})    
                     </option>
                 `);
             }
@@ -702,26 +706,25 @@
             etimeSelect.empty();
             etimeSelect.append('<option value="">-- Select Time --</option>');
 
-            if (!stime) return;
+            if (!selectedStartTime) return;
 
-            const startMinutes = toMinutes(stime);
+            const selectedStartTimeInMinutes = toMinutes(selectedStartTime);
 
             let bookedTime = [];
-            booked.forEach(item => {
-                if( booked[i].id === idBooking ) return;
 
-                if( driver_nik === item.driver_nik ){
-                    let bookedStartTime = toMinutes(item.scheduled_pickup_time);
-                    let bookedEndTime = toMinutes(item.scheduled_end_time);                    
-                    
-                    let selectedStartTime = toMinutes(stime);
+            booked.forEach(book => {
+                if( book.id === idBooking ) return;
+
+                if( book.driver.Name.split(' ').join('-').toLowerCase() === slug ){
+                    let bookedStartTime = toMinutes(book.scheduled_pickup_time);
+                    let bookedEndTime = toMinutes(book.scheduled_end_time);                    
                     let end   = toMinutes('17:00');
 
                     // kalo waktu yang di pilih >= waktu booking yang lain. misal waktu book : 09:00 - 10:00 waktu yang di pilih 10:00.
                     // maka endtime nya endtime dari waktu booking (10:00), karna waktu yang lain masih bisa di pilih.
                     // kalo waktu yang di pilih < waktu booking yang lain. misal waktu book : 09:00 - 10:00 waktu yang di pilih 08:00.
                     // maka endtime nya 17:00, karna tidak mungkin book melewati jam 09:00. maka select box hanya menampilkan 08:30, 09:00
-                    if( selectedStartTime >= bookedEndTime ) {
+                    if( selectedStartTimeInMinutes >= bookedEndTime ) {
                         end = (bookedEndTime - 30);
                     }
 
@@ -735,32 +738,28 @@
             bookedTime = [...new Set(bookedTime)];
 
             let availableTime = timeRanges.filter(time => !bookedTime.includes(time));
-            availableTime = availableTime.filter(time => time > stime);
+            availableTime = availableTime.filter(time => time > selectedStartTime);
 
-            for (let index = 0; index < availableTime.length; index++) {
-                const currentTimeRange = availableTime[index];
-                const currentTimeRangeMinutes = toMinutes(currentTimeRange);
-
-                const durationMinutes = currentTimeRangeMinutes - startMinutes;
-                const hours = Math.floor(durationMinutes / 60);
-                const mins  = durationMinutes % 60;
+            availableTime.forEach(time => {
+                const timeToMinutes = toMinutes(time);
+                const durationInMinutes = timeToMinutes - selectedStartTimeInMinutes;
+                const hours = Math.floor(durationInMinutes / 60);
+                const minutes = durationInMinutes % 60;
 
                 let durationText = '';
-                
-                if (hours) durationText += `${hours} Hour${hours > 1 ? 's' : ''} `;
-                if (mins)  durationText += `${mins} Minutes`;
+
+                if( hours ) durationText += `${hours} Hour${hours > 1 ? '%' : ''}`;
+                if( minutes ) durationText += `${minutes} Minutes`;
 
                 durationText = durationText.trim();
 
                 etimeSelect.append(`
-                    <option value="${currentTimeRange}">
-                        ${currentTimeRange} (${durationText})
+                    <option value="${time}">
+                        ${time} (${durationText})
                     </option>
                 `);
-            }
+            });
         }
     }
-
-    
 </script>
 @endsection
