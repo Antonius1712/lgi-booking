@@ -32,7 +32,17 @@ class User extends Model implements Authenticatable
 
     public function UserGroup()
     {
-        return $this->hasOne(LgiGlobalUserGroup::class, 'UserId', 'NIK');
+        return $this->hasOne(LgiGlobalUserGroup::class, 'UserId', 'NIK')
+                ->whereIn('GroupCode', ['admin-lgi-booking', 'driver-lgi-booking', 'user-lgi-booking']);
+    }
+
+    public function role() {
+        $group = $this->UserGroup?->Group;
+
+        if (!$group) return null;
+
+        // Filter: only return the group if it belongs to lgi-booking app
+        return $group->AppCode === 'lgi-booking' ? $group->GroupName : null;
     }
 
     public function initials()

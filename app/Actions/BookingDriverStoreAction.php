@@ -3,11 +3,14 @@
 namespace App\Actions;
 
 use App\Enums\DriverBookingStatusEnum;
+use App\Mail\BookingDriverCreatedMail;
 use App\Models\DriverBooking;
+use App\Models\User;
 use App\Services\BookingNumberGenerator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class BookingDriverStoreAction
 {
@@ -37,7 +40,7 @@ class BookingDriverStoreAction
             $booking_number = BookingNumberGenerator::generate();
             $scheduled_time_slot = "$stime - $etime";
 
-            DriverBooking::create([
+            $booking = DriverBooking::create([
                 'booking_number' => $booking_number,
                 'user_nik' => auth()->user()->NIK,
                 'driver_nik' => $driver_nik,
@@ -57,6 +60,33 @@ class BookingDriverStoreAction
                 'scheduled_duration' => $duration_in_minute,
                 'purpose_of_trip' => $purpose_of_trip,
             ]);
+
+            $this->sendNotifications($booking);
         });
+    }
+
+    private function sendNotifications(DriverBooking $booking): void
+    {
+        // Load relationships (adjust based on your actual relationships/columns)
+        $booker = User::where('NIK', $booking->user_nik)->first();
+        $driver = User::where('NIK', $booking->driver_nik)->first();
+        $cc = ['gs05.ho@lgi.co.id'];
+        $bcc = [
+            'it-dba07@lgi.co.id',
+        ];
+
+        $testing_email = 'it-dba07@lgi.co.id';
+
+        if ($booker) {
+            // Mail::to($booker->email)
+            Mail::to($testing_email)
+                ->queue(new BookingDriverCreatedMail($booking, 'booker'));
+        }
+
+        if ($driver) {
+            // Mail::to($driver->email)
+            Mail::to($testing_email)
+                ->queue(new BookingDriverCreatedMail($booking, 'driver'));
+        }
     }
 }

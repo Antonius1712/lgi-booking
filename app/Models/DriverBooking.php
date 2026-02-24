@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasBookingLogs;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DriverBooking extends Model
 {
+    use HasBookingLogs;
+
     protected $fillable = [
         'booking_number',
         'user_nik',

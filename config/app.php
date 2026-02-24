@@ -118,6 +118,8 @@ return [
     |
     */
 
+    'layout' => env('APP_LAYOUT', 'vertical'),
+
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),

@@ -1,0 +1,212 @@
+/* ════════════════════════════════════════════════════════
+   BOOKING DETAIL PAGE  (admin/bookings/driver/show, room/show)
+════════════════════════════════════════════════════════ */
+
+/* ── Shared primitives ─────────────────────────────────── */
+.bkd-section-label {
+    font-size: .68rem;
+    font-weight: 700;
+    color: #b9b9c3;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.bkd-name {
+    font-size: .88rem;
+    font-weight: 600;
+    color: #2c2c5e;
+}
+
+.bkd-sub {
+    font-size: .75rem;
+    color: #82868b;
+    margin-top: 1px;
+}
+
+.bkd-badge {
+    display: inline-block;
+    font-size: .68rem;
+    font-weight: 700;
+    background: #e8e5ff;
+    color: #7367f0;
+    padding: 1px 8px;
+    border-radius: 20px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+/* ── Avatar ────────────────────────────────────────────── */
+.bkd-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--av-bg);
+    color: var(--av-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .85rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.bkd-av-sm {
+    width: 34px;
+    height: 34px;
+    font-size: .75rem;
+}
+
+/* ── Info row (icon + label/value stacked) ─────────────── */
+.bkd-info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+}
+
+.bkd-info-row .icon-base {
+    font-size: 1rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.bkd-info-label {
+    font-size: .68rem;
+    color: #b9b9c3;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.bkd-info-value {
+    font-size: .83rem;
+    font-weight: 600;
+    color: #2c2c5e;
+    margin-top: 1px;
+}
+
+/* ── Action card ───────────────────────────────────────── */
+.bkd-action-card {
+    border: none;
+    border-left: 3px solid var(--ac-color);
+    border-radius: 10px;
+}
+
+.bkd-action-header {
+    background: color-mix(in srgb, var(--ac-color) 6%, white);
+    border-bottom: 1px solid color-mix(in srgb, var(--ac-color) 14%, white);
+    border-radius: 10px 10px 0 0 !important;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.bkd-action-header .icon-base {
+    color: var(--ac-color);
+    font-size: 1.1rem;
+}
+
+/* ── Extend buttons ────────────────────────────────────── */
+.bkd-extend-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: .65rem 1.25rem;
+    border-radius: 10px;
+    border: 2px solid #f3f2f7;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, transform .1s;
+    min-width: 80px;
+}
+
+.bkd-extend-btn:hover {
+    border-color: #ff9f43;
+    background: rgba(255, 159, 67, .06);
+    transform: translateY(-1px);
+}
+
+.bkd-extend-btn:active {
+    transform: translateY(0);
+}
+
+.bkd-extend-delta {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ff9f43;
+}
+
+.bkd-extend-time {
+    font-size: .72rem;
+    color: #82868b;
+    white-space: nowrap;
+}
+
+/* ── Driver / Room selection cards ─────────────────────── */
+.bkd-driver-card {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .6rem .75rem;
+    border: 2px solid #f3f2f7;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    background: #fff;
+    width: 100%;
+    margin: 0;
+}
+
+.bkd-driver-card:hover {
+    border-color: #7367f0;
+    background: rgba(115, 103, 240, .04);
+}
+
+.bkd-driver-card.bkd-driver-current,
+.bkd-driver-card.bkd-driver-selected {
+    border-color: #7367f0;
+    background: rgba(115, 103, 240, .06);
+}
+
+.bkd-driver-card input[type="radio"]:checked + .bkd-avatar {
+    box-shadow: 0 0 0 2px #7367f0;
+}
+
+/* ── Audit log timeline ────────────────────────────────── */
+.bkd-log-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .85rem;
+    padding: .85rem 1.25rem;
+    border-bottom: 1px solid #f3f2f7;
+    position: relative;
+}
+
+.bkd-log-item:last-child {
+    border-bottom: none;
+}
+
+.bkd-log-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--log-color) 12%, white);
+    color: var(--log-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .85rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* ── Timeline connector line ───────────────────────────── */
+.bkd-log-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: calc(1.25rem + 16px); /* center of icon */
+    top: calc(.85rem + 32px);
+    width: 1px;
+    height: calc(100% - .85rem);
+    background: #f0eff5;
+}

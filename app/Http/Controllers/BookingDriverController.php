@@ -33,7 +33,7 @@ class BookingDriverController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $year = $request->year ?? now()->format('Y');
         $month = $request->month ?? now()->format('m');
@@ -56,7 +56,9 @@ class BookingDriverController extends Controller
             })
             ->get();
 
-        // dd($date);
+        // dd($drivers);
+
+        // dd($date, $day, $request->day);
         $booked = DriverBooking::query()
             ->where('scheduled_pickup_date', $date)
             ->with(['user:NIK,Name', 'driver:NIK,Name'])
