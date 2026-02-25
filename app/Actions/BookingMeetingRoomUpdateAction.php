@@ -11,7 +11,7 @@ use phpDocumentor\Reflection\Types\Integer;
 
 class BookingMeetingRoomUpdateAction
 {
-    public function handle(Integer $id, Request $request): void
+    public function handle($id, Request $request): void
     {
         try {
             DB::transaction(function () use ($id, $request) {

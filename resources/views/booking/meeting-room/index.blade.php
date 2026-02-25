@@ -10,6 +10,8 @@
         $slotMinutes = 30;
         $bookedMap = [];
         $skipMap = [];
+        $isToday = now()->format('Y-m-d') === "$year-$month-$day";
+        $currentTime = now()->format('H:i');
 
         foreach ($booked as $b) {
         if (!$b->meetingRoom) continue;
@@ -40,6 +42,56 @@
             $skipMap[$roomSlug][$skipTime] = true;
             }
             }
+
+            // For today: re-anchor bookings that started in the past but end in the future
+            if ($isToday) {
+                foreach ($bookedMap as $slug => $timesMap) {
+                    foreach ($timesMap as $start => $booking) {
+                        if ($start >= $currentTime) continue;
+
+                        $end = $booking['end'];
+                        unset($bookedMap[$slug][$start]);
+
+                        // Clear skip entries caused by this past booking
+                        foreach (array_keys($skipMap[$slug] ?? []) as $skipTime) {
+                            if ($skipTime < $end) {
+                                unset($skipMap[$slug][$skipTime]);
+                            }
+                        }
+
+                        if ($end <= $currentTime) continue;
+
+                        // Find the first visible slot within this booking's range
+                        $firstVisible = null;
+                        foreach ($timeRanges as $slot) {
+                            if ($slot >= $currentTime && $slot < $end) {
+                                $firstVisible = $slot;
+                                break;
+                            }
+                        }
+
+                        if (!$firstVisible) continue;
+
+                        [$fh, $fm] = explode(':', $firstVisible);
+                        [$eh, $em] = explode(':', $end);
+                        $newRowspan = ((int)$eh * 60 + (int)$em - ((int)$fh * 60 + (int)$fm)) / $slotMinutes;
+
+                        $bookedMap[$slug][$firstVisible] = array_merge($booking, [
+                            'rowspan' => $newRowspan,
+                            'end' => $end,
+                        ]);
+
+                        $prevSlot = $firstVisible;
+                        for ($i = 1; $i < $newRowspan; $i++) {
+                            [$ph, $pm] = explode(':', $prevSlot);
+                            $nextMinutes = (int)$ph * 60 + (int)$pm + 30;
+                            $nextSlot = sprintf('%02d:%02d', intdiv($nextMinutes, 60), $nextMinutes % 60);
+                            $skipMap[$slug][$nextSlot] = true;
+                            $prevSlot = $nextSlot;
+                        }
+                    }
+                }
+            }
             @endphp
 
             <input type="text" class="form-control flatpickr" placeholder="Choose Date"
@@ -62,6 +114,9 @@
                             @endforeach
                         </tr>
                         @foreach ($timeRanges as $range)
+                        @if ($isToday && $range < $currentTime)
+                            @continue
+                        @endif
                         <tr>
                             <td class="" style="vertical-align: top;">
                                 {{ $range }}
@@ -273,6 +328,8 @@
     $(document).ready(function () {
         const timeRanges = @json($timeRanges);
         const booked = @json($booked);
+        const isToday = @json(now()->format('Y-m-d') === "$year-$month-$day");
+        const currentTimeStr = @json(now()->format('H:i'));
 
         $('.select2').select2();
 
@@ -419,11 +476,13 @@
                 stimeSelect.append('<option value="">-- Select Time --</option>');
 
                 timeRanges.forEach(t => {
+                    if (isToday && timeToMinutes(t) < timeToMinutes(currentTimeStr)) return;
+
                     const tMinutes = timeToMinutes(t);
                     let overlap = false;
 
                     for (let i = 0; i < booked.length; i++) {
-                        
+
                         if (booked[i].meeting_room.slug !== room_slug) continue;
 
                         const bStart = timeToMinutes(booked[i].start_time);
@@ -447,6 +506,8 @@
                 stimeSelect.append('<option value="">-- Select Time --</option>');
 
                 timeRanges.forEach(t => {
+                    if (isToday && timeToMinutes(t) < timeToMinutes(currentTimeStr)) return;
+
                     const tMinutes = timeToMinutes(t);
                     let overlap = false;
 

@@ -26,7 +26,14 @@ class BookingMeetingRoomStoreRequest extends FormRequest
             'year' => ['required'],
             'month' => ['required'],
             'day' => ['required'],
-            'stime' => ['required'],
+            'stime' => ['required', function ($attribute, $value, $fail) {
+                $bookingDateTime = \Carbon\Carbon::parse(
+                    $this->input('year') . '-' . $this->input('month') . '-' . $this->input('day') . ' ' . $value
+                );
+                if ($bookingDateTime->isPast()) {
+                    $fail('The start time cannot be in the past.');
+                }
+            }],
             'etime' => ['required'],
             'description' => ['required'],
             'usage_type' => ['required'],
