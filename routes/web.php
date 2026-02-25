@@ -48,13 +48,14 @@ Route::middleware(['auth'])->group(function () {
         // ── Driver Booking Management (admin controls all actions) ─────────────
         Route::prefix('driver-bookings')->name('driver-bookings.')->group(function () {
             Route::get('/', [AdminDriverBookingController::class, 'index'])->name('index');
-            Route::get('/{driverBooking}', [AdminDriverBookingController::class, 'show'])->name('show');
-            Route::patch('/{driverBooking}/confirm', [AdminDriverBookingController::class, 'confirm'])->name('confirm');
-            Route::patch('/{driverBooking}/cancel', [AdminDriverBookingController::class, 'cancel'])->name('cancel');
-            Route::patch('/{driverBooking}/change-driver', [AdminDriverBookingController::class, 'changeDriver'])->name('change-driver');
-            Route::patch('/{driverBooking}/extend', [AdminDriverBookingController::class, 'extend'])->name('extend');
-            Route::patch('/{driverBooking}/reschedule', [AdminDriverBookingController::class, 'reschedule'])->name('reschedule');
             Route::get('/available-drivers', [AdminDriverBookingController::class, 'availableDrivers'])->name('available-drivers');
+
+            Route::get('/{driverBooking}', [AdminDriverBookingController::class, 'show'])->name('show');
+            Route::patch('/confirm/{driverBooking}', [AdminDriverBookingController::class, 'confirm'])->name('confirm');
+            Route::patch('/cancel/{driverBooking}', [AdminDriverBookingController::class, 'cancel'])->name('cancel');
+            Route::patch('/change-driver/{driverBooking}', [AdminDriverBookingController::class, 'changeDriver'])->name('change-driver');
+            Route::patch('/extend/{driverBooking}', [AdminDriverBookingController::class, 'extend'])->name('extend');
+            Route::patch('/reschedule/{driverBooking}', [AdminDriverBookingController::class, 'reschedule'])->name('reschedule');
         });
 
         // ── Meeting Room Bookings ─────────────────────────────────────────────

@@ -37,8 +37,8 @@
             </div>
             <div>
                 <label class="form-label mb-1" style="font-size:.75rem;font-weight:600">Status</label>
-                <select name="status[]" class="form-select form-select-sm"
-                        style="width:160px" multiple>
+                <select name="status" class="form-select form-select-sm" style="width:160px">
+                    <option value="">All Statuses</option>
                     @foreach ($statuses as $s)
                         <option value="{{ $s->value }}"
                             {{ in_array($s->value, (array) request('status', [])) ? 'selected' : '' }}>
@@ -89,11 +89,9 @@
     <div class="table-responsive">
         <table class="table table-hover mb-0">
             <thead>
-                <tr style="background:#fafafa">
+                <tr>
                     @foreach (['Booking No.','Employee','Driver','Date & Time','Destination','Status','Actions'] as $h)
-                        <th style="font-size:.72rem;color:#82868b;text-transform:uppercase;
-                                   letter-spacing:.5px;font-weight:700;padding:.75rem 1rem;
-                                   white-space:nowrap">{{ $h }}</th>
+                        <th>{{ $h }}</th>
                     @endforeach
                 </tr>
             </thead>
@@ -126,7 +124,9 @@
                         {{-- Booking No --}}
                         <td style="vertical-align:middle;padding:.75rem 1rem">
                             <div style="font-size:.78rem;font-weight:700;color:#7367f0;letter-spacing:.3px">
-                                {{ $booking->booking_number }}
+                                <a href="{{ route('admin.driver-bookings.show', $booking) }}" title="View Detail">
+                                    {{ $booking->booking_number }}
+                                </a>
                             </div>
                             <div style="font-size:.7rem;color:#b9b9c3">
                                 {{ $booking->created_at?->format('d M Y') }}
@@ -143,7 +143,7 @@
                                     {{ $booking->user?->initials() }}
                                 </div>
                                 <div>
-                                    <div style="font-size:.82rem;font-weight:600;color:#2c2c5e">
+                                    <div class="fw-bold text-black small">
                                         {{ $booking->user?->Name }}
                                     </div>
                                     <div style="font-size:.72rem;color:#b9b9c3">
@@ -162,8 +162,15 @@
                                             font-size:.7rem;font-weight:700;flex-shrink:0">
                                     {{ $booking->driver?->initials() }}
                                 </div>
-                                <div style="font-size:.82rem;font-weight:600;color:#2c2c5e">
-                                    {{ $booking->driver?->Name }}
+                                <div>
+                                    <div class="fw-bold text-black small">
+                                        {{ $booking->driver?->Name }}
+                                    </div>
+                                    <div style="font-size:.72rem;color:#b9b9c3">
+                                        {{ $booking->driver?->NIK }}
+                                        /
+                                        {{ $booking->driver?->NoTelp ?? '-' }}
+                                    </div>
                                 </div>
                             </div>
                         </td>
@@ -368,8 +375,10 @@
 <script>
 // ── Cancel modal ──────────────────────────────────────────────────────
 function openCancel(id, bookingNo) {
+    const cancelUrl = @json(route('admin.driver-bookings.cancel', '__ID__'));
+    cancelUrl = cancelUrl.replace('__ID__', id);
     $('#cancel-booking-no').text(bookingNo);
-    $('#cancel-form').attr('action', '/admin/driver-bookings/' + id + '/cancel');
+    $('#cancel-form').attr('action', cancelUrl);
     $('#cancelModal').modal('show');
 }
 
@@ -378,7 +387,8 @@ function openChangeDriver(id, bookingNo, date, timeStart, timeEnd) {
     $('#change-driver-desc').html(
         'Booking <strong>' + bookingNo + '</strong> · ' + date + ' · ' + timeStart + '–' + timeEnd
     );
-    $('#change-driver-form').attr('action', '/admin/driver-bookings/' + id + '/change-driver');
+    const changeDriverUrl = @json(route('admin.driver-bookings.change-driver', '__ID__'));
+    $('#change-driver-form').attr('action', changeDriverUrl.replace('__ID__', id));
     $('#selected-driver-nik').val('');
     $('#change-driver-submit').prop('disabled', true);
 

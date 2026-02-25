@@ -9,6 +9,7 @@ use App\Http\Requests\BookingMeetingRoomStoreRequest;
 use App\Http\Requests\BookingMeetingRoomUpdateRequest;
 use App\Models\MeetingRoom;
 use App\Models\MeetingRoomBooking;
+use App\Models\Setting;
 use App\Services\MiniCalendars;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -39,6 +40,10 @@ class BookingMeetingController extends Controller
         $timeSlots = $this->timeSlot();
         $timeRanges = $this->timeRange();
 
+        $settingTimeRange = Setting::query()
+            ->where('key', 'booking_meeting_room_time_range')
+            ->value('value');
+
         $rooms = MeetingRoom::query()
             ->with('location')
             ->orderBy('location_id', 'desc')
@@ -50,7 +55,9 @@ class BookingMeetingController extends Controller
             ->with(['meetingRoom:id,slug', 'user:NIK,Name'])
             ->get(['id', 'nik', 'meeting_room_id', 'start_time', 'end_time', 'description']);
 
-        return view('booking.meeting-room.index', compact('calendarTypes', 'rooms', 'timeSlots', 'timeRanges', 'booked', 'miniCalendars'));
+        $meetingRoomDays = (int) Setting::get('meeting_room_booking_days_ahead', 14);
+
+        return view('booking.meeting-room.index', compact('calendarTypes', 'rooms', 'timeSlots', 'timeRanges', 'booked', 'miniCalendars', 'meetingRoomDays'));
     }
 
     public function store(BookingMeetingRoomStoreRequest $request, BookingMeetingRoomStoreAction $action): RedirectResponse

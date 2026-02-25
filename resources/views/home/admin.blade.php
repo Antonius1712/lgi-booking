@@ -138,13 +138,13 @@
                             <th
                                 style="font-size:.72rem;color:#82868b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;padding:.75rem 1rem">
                                 Employee</th>
-                            <th
+                            <th class="d-none d-md-table-cell"
                                 style="font-size:.72rem;color:#82868b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;padding:.75rem 1rem">
                                 Driver</th>
                             <th
                                 style="font-size:.72rem;color:#82868b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;padding:.75rem 1rem">
                                 Time</th>
-                            <th
+                            <th class="d-none d-md-table-cell"
                                 style="font-size:.72rem;color:#82868b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;padding:.75rem 1rem">
                                 Destination</th>
                             <th
@@ -166,7 +166,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td style="vertical-align:middle;padding:.75rem 1rem">
+                            <td class="d-none d-md-table-cell" style="vertical-align:middle;padding:.75rem 1rem">
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="home-mini-av home-mini-av-green">{{ $booking->driver?->initials() }}
                                     </div>
@@ -180,7 +180,7 @@
                                 {{ $booking->scheduled_pickup_time?->format('H:i') }}–{{
                                 $booking->scheduled_end_time?->format('H:i') }}
                             </td>
-                            <td class="text-center"
+                            <td class="d-none d-md-table-cell text-center"
                                 style="vertical-align:middle;padding:.75rem 1rem;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.8rem">
                                 {{ $booking->destination }}
                             </td>
@@ -261,13 +261,13 @@
                             <th
                                 style="font-size:.72rem;color:#82868b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;padding:.75rem 1rem">
                                 Employee</th>
-                            <th
+                            <th class="d-none d-md-table-cell"
                                 style="font-size:.72rem;color:#82868b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;padding:.75rem 1rem">
                                 Meeting Room</th>
                             <th
                                 style="font-size:.72rem;color:#82868b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;padding:.75rem 1rem">
                                 Time</th>
-                            <th
+                            <th class="d-none d-md-table-cell"
                                 style="font-size:.72rem;color:#82868b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;padding:.75rem 1rem">
                                 Location</th>
                             <th
@@ -299,7 +299,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-center"
+                            <td class="d-none d-md-table-cell text-center"
                                 style="vertical-align:middle;padding:.75rem 1rem;font-size:.8rem;font-weight:600;color:#2c2c5e">
                                 {{ $booking->meetingRoom?->name }}
                             </td>
@@ -308,7 +308,7 @@
                                 {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }}–{{
                                 \Carbon\Carbon::parse($booking->end_time)->format('H:i') }}
                             </td>
-                            <td class="text-center"
+                            <td class="d-none d-md-table-cell text-center"
                                 style="vertical-align:middle;padding:.75rem 1rem;font-size:.8rem;color:#5e5873">
                                 {{ str()->of($booking->location)->replace('-', ' ')->title() ?? '-' }}
                             </td>

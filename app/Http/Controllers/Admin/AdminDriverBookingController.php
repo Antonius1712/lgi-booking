@@ -9,6 +9,7 @@ use App\Models\BookingLog;
 use App\Models\DriverBooking;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -325,7 +326,7 @@ class AdminDriverBookingController extends Controller
 
     // ── AJAX: Available drivers ───────────────────────────────────────
 
-    public function availableDrivers(Request $request): \Illuminate\Http\JsonResponse
+    public function availableDrivers(Request $request): JsonResponse
     {
         $request->validate([
             'date' => ['required', 'date'],

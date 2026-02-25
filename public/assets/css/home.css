@@ -319,3 +319,42 @@
 .home-quick-action-link:hover {
     border-color: #7367f0; color: #7367f0; background: #f1f0ff;
 }
+
+/* ── MOBILE RESPONSIVENESS ── */
+
+/* Prevent CSS Grid items from expanding beyond their fraction cell.
+   Default min-width: auto can cause grid cells to overflow the container. */
+.home-stat-grid > *,
+.home-driver-avail-grid > *,
+.home-main-grid > * {
+    min-width: 0;
+}
+
+/* Prevent long driver names from expanding the availability card */
+.home-drv-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.home-driver-avail-card { overflow: hidden; }
+
+/* Prevent the home content sections from scrolling horizontally on mobile */
+@media(max-width: 1199.98px) {
+    .home-stat-grid,
+    .home-main-grid { overflow-x: clip; }
+}
+
+/* Welcome Banner: tighter padding and smaller font on phones */
+@media(max-width: 576px) {
+    .welcome-banner { padding: 1.25rem 1.25rem; }
+    .welcome-title  { font-size: 1.1rem; }
+    .welcome-icon   { font-size: 2.5rem; right: 1rem; }
+}
+
+/* Driver Availability Cards: tighter on small screens */
+@media(max-width: 576px) {
+    .home-driver-avail-card { padding: .6rem .75rem; gap: .5rem; }
+}
+
+/* Activity label: prevent long words from overflowing */
+.home-act-label { word-break: break-word; }

@@ -11,6 +11,7 @@ use App\Http\Requests\BookingDriverUpdateRequest;
 use App\Models\Booking;
 use App\Models\DriverBooking;
 use App\Models\MeetingRoom;
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Exception;
@@ -67,7 +68,9 @@ class BookingDriverController extends Controller
         // dd($booked);
         // $booked = [];
 
-        return view('booking.driver.index', compact('usageTypes', 'drivers', 'timeSlots', 'timeRanges', 'booked'));
+        $driverDays = (int) Setting::get('driver_booking_days_ahead', 14);
+
+        return view('booking.driver.index', compact('usageTypes', 'drivers', 'timeSlots', 'timeRanges', 'booked', 'driverDays'));
     }
 
     /**

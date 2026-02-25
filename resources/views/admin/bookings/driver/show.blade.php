@@ -209,7 +209,7 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                     <h6 class="mb-0 fw-semibold">Confirm Departure</h6>
                 </div>
                 <div class="card-body">
-                    <p style="font-size:.83rem;color:#5e5873;margin-bottom:1rem">
+                    <p class="small mb-3 text-muted">
                         Mark this booking as departed. The actual pickup time will be recorded as <strong>now</strong>,
                         and the employee will receive a confirmation email.
                     </p>
@@ -237,7 +237,7 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                             <i class="icon-base bx bx-error me-1"></i>{{ $message }}
                         </div>
                     @enderror
-                    <p style="font-size:.83rem;color:#5e5873;margin-bottom:1rem">
+                    <p class="small mb-3 text-muted">
                         Current end time:
                         <strong>{{ $driverBooking->scheduled_end_time?->format('H:i') }} WIB</strong>.
                         Select how many hours to add:
@@ -264,8 +264,8 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
 
         {{-- ── CHANGE DRIVER ── --}}
         @if ($canChange)
-            <div class="card mb-3 bkd-action-card" style="--ac-color:#00cfe8">
-                <div class="card-header bkd-action-header py-3">
+            <div class="card border-0 border-start border-3 border-warning rounded-3 mb-3">
+                <div class="d-flex align-items-center gap-2 border-bottom border-warning-subtle bg-warning-subtle rounded-top py-3 px-3">
                     <i class="icon-base bx bx-transfer"></i>
                     <h6 class="mb-0 fw-semibold">Change Driver</h6>
                 </div>
@@ -275,7 +275,7 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                             <i class="icon-base bx bx-error me-1"></i>{{ $message }}
                         </div>
                     @enderror
-                    <p style="font-size:.83rem;color:#5e5873;margin-bottom:1rem">
+                    <p class="small mb-3 text-muted">
                         Current driver: <strong>{{ $driverBooking->driver?->Name }}</strong>.
                         Select a replacement:
                     </p>
@@ -322,8 +322,8 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
 
         {{-- ── RESCHEDULE ── --}}
         @if ($canReschedule)
-            <div class="card mb-3 bkd-action-card" style="--ac-color:#7367f0">
-                <div class="card-header bkd-action-header py-3">
+            <div class="card border-0 border-start border-3 border-primary rounded-3 mb-3">
+                <div class="d-flex align-items-center gap-2 border-bottom border-primary-subtle bg-primary-subtle rounded-top py-3 px-3">
                     <i class="icon-base bx bx-calendar-edit"></i>
                     <h6 class="mb-0 fw-semibold">Reschedule</h6>
                 </div>
@@ -333,7 +333,7 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                             <i class="icon-base bx bx-error me-1"></i>{{ $message }}
                         </div>
                     @enderror
-                    <p style="font-size:.83rem;color:#5e5873;margin-bottom:1rem">
+                    <p class="small mb-3 text-muted">
                         Current schedule:
                         <strong>
                             {{ $driverBooking->scheduled_pickup_date?->format('d M Y') }}
@@ -374,8 +374,8 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
 
         {{-- ── CANCEL BOOKING ── --}}
         @if ($canCancel)
-            <div class="card mb-3 bkd-action-card" style="--ac-color:#ea5455">
-                <div class="card-header bkd-action-header py-3">
+            <div class="card border-0 border-start border-3 border-danger rounded-3 mb-3">
+                <div class="d-flex align-items-center gap-2 border-bottom border-danger-subtle bg-danger-subtle rounded-top py-3 px-3">
                     <i class="icon-base bx bx-x-circle"></i>
                     <h6 class="mb-0 fw-semibold">Cancel Booking</h6>
                 </div>
@@ -385,9 +385,10 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                             <i class="icon-base bx bx-error me-1"></i>{{ $message }}
                         </div>
                     @enderror
-                    <p style="font-size:.83rem;color:#5e5873;margin-bottom:1rem">
+                    <p class="small mb-3 text-muted">
                         This will notify the employee via email. Please provide a reason.
                     </p>
+
                     <form action="{{ route('admin.driver-bookings.cancel', $driverBooking) }}" method="POST">
                         @csrf @method('PATCH')
                         <div class="mb-3">

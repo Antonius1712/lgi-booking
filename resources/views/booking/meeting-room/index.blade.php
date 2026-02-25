@@ -280,7 +280,8 @@
             // inline: true,
             showMonths: 1,
             dateFormat: "d M Y",
-            // minDate: "today",
+            minDate: "today",
+            maxDate: new Date(new Date().setDate(new Date().getDate() + {{ $meetingRoomDays }})),
             onChange: function(selectedDates) {
                 if (!selectedDates.length) return;
                 $('#loading').show();

@@ -37,8 +37,8 @@
             </div>
             <div>
                 <label class="form-label mb-1" style="font-size:.75rem;font-weight:600">Status</label>
-                <select name="status[]" class="form-select form-select-sm"
-                        style="width:160px" multiple>
+                <select name="status" class="form-select form-select-sm" style="width:160px">
+                    <option value="">All Statuses</option>
                     @foreach ($statuses as $s)
                         <option value="{{ $s }}"
                             {{ in_array($s, (array) request('status', [])) ? 'selected' : '' }}>
@@ -100,14 +100,6 @@
             <tbody>
                 @forelse ($bookings as $booking)
                     @php
-                        $pillMap = [
-                            'booked'    => ['c' => '#7367f0', 'l' => 'Booked'],
-                            'in_use' => ['c' => '#28c76f', 'l' => 'In Use', 'live' => true],
-                            'completed' => ['c' => '#00cfe8', 'l' => 'Completed'],
-                            'cancelled' => ['c' => '#ea5455', 'l' => 'Cancelled'],
-                        ];
-                        $pill = $pillMap[$booking->status] ?? ['c' => '#82868b', 'l' => ucfirst($booking->status)];
-
                         $isTerminal = in_array($booking->status, ['completed', 'cancelled']);
                         $canCancel  = ! $isTerminal;
                     @endphp
@@ -180,17 +172,18 @@
 
                         {{-- Status --}}
                         <td style="vertical-align:middle;padding:.75rem 1rem">
-                            <span style="display:inline-flex;align-items:center;gap:3px;
-                                         font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:20px;
-                                         text-transform:uppercase;letter-spacing:.4px;
-                                         background:color-mix(in srgb, {{ $pill['c'] }} 12%, white);
-                                         color:{{ $pill['c'] }}">
-                                @if (!empty($pill['live']))
-                                    <span style="width:6px;height:6px;border-radius:50%;
-                                                 background:{{ $pill['c'] }};
-                                                 animation:home-pulse 1.5s infinite;display:inline-block"></span>
-                                @endif
-                                {{ $pill['l'] }}
+                            @php
+                                $statusColors = [
+                                    'Booked' => 'badge bg-primary',
+                                    'Pending'   => 'badge bg-warning',
+                                    'Confirmed' => 'badge bg-info',
+                                    'Completed' => 'badge bg-success',
+                                    'Cancelled' => 'badge bg-danger',
+                                ];
+                                $class = $statusColors[$booking->status] ?? 'badge bg-secondary';
+                            @endphp
+                            <span class="{{ $class }}">
+                                {{ $booking->status }}
                             </span>
                         </td>
 
