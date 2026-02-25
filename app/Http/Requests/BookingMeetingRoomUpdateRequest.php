@@ -26,10 +26,9 @@ class BookingMeetingRoomUpdateRequest extends FormRequest
             'year' => ['required'],
             'month' => ['required'],
             'day' => ['required'],
-            'stime' => ['required'],
-            'etime' => ['required'],
-            'description' => ['required'],
-            'usage_type' => ['required'],
+            'e_stime' => ['required'],
+            'e_etime' => ['required'],
+            'e_description' => ['required'],
         ];
     }
 }

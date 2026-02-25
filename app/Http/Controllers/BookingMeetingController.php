@@ -67,8 +67,9 @@ class BookingMeetingController extends Controller
         return back()->with(['success' => 'Sukses']);
     }
 
-    public function update(Integer $id, BookingMeetingRoomUpdateRequest $request, BookingMeetingRoomUpdateAction $action): RedirectResponse
+    public function update($id, BookingMeetingRoomUpdateRequest $request, BookingMeetingRoomUpdateAction $action): RedirectResponse
     {
+        // dd($id);
         $action->handle($id, $request);
 
         return back()->with(['success' => 'Sukses']);

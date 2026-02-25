@@ -10,6 +10,8 @@
             $slotMinutes = 30;
             $bookedMap = [];
             $skipMap = [];
+            $isToday = now()->format('Y-m-d') === "$year-$month-$day";
+            $currentTime = now()->format('H:i');
 
             foreach ($booked as $book) {
                 if (!$book->driver) continue;
@@ -36,12 +38,62 @@
                 // dd($bookedMap);
 
                 // mark rows to skip
-                for ($i = 1; $i < $rowspan; $i++) { 
+                for ($i = 1; $i < $rowspan; $i++) {
                     $skipTime=$book->scheduled_pickup_time->copy()
                     ->addMinutes($i * $slotMinutes)
                     ->format('H:i');
 
                     $skipMap[$driver][$skipTime] = true;
+                }
+            }
+
+            // For today: re-anchor bookings that started in the past but end in the future
+            if ($isToday) {
+                foreach ($bookedMap as $slug => $timesMap) {
+                    foreach ($timesMap as $start => $booking) {
+                        if ($start >= $currentTime) continue;
+
+                        $end = $booking['scheduled_end_time'];
+                        unset($bookedMap[$slug][$start]);
+
+                        // Clear skip entries caused by this past booking
+                        foreach (array_keys($skipMap[$slug] ?? []) as $skipTime) {
+                            if ($skipTime < $end) {
+                                unset($skipMap[$slug][$skipTime]);
+                            }
+                        }
+
+                        if ($end <= $currentTime) continue;
+
+                        // Find the first visible slot within this booking's range
+                        $firstVisible = null;
+                        foreach ($timeRanges as $slot) {
+                            if ($slot >= $currentTime && $slot < $end) {
+                                $firstVisible = $slot;
+                                break;
+                            }
+                        }
+
+                        if (!$firstVisible) continue;
+
+                        [$fh, $fm] = explode(':', $firstVisible);
+                        [$eh, $em] = explode(':', $end);
+                        $newRowspan = ((int)$eh * 60 + (int)$em - ((int)$fh * 60 + (int)$fm)) / $slotMinutes;
+
+                        $bookedMap[$slug][$firstVisible] = array_merge($booking, [
+                            'rowspan' => $newRowspan,
+                            'scheduled_pickup_time' => $firstVisible,
+                        ]);
+
+                        $prevSlot = $firstVisible;
+                        for ($i = 1; $i < $newRowspan; $i++) {
+                            [$ph, $pm] = explode(':', $prevSlot);
+                            $nextMinutes = (int)$ph * 60 + (int)$pm + 30;
+                            $nextSlot = sprintf('%02d:%02d', intdiv($nextMinutes, 60), $nextMinutes % 60);
+                            $skipMap[$slug][$nextSlot] = true;
+                            $prevSlot = $nextSlot;
+                        }
+                    }
                 }
             }
         @endphp
@@ -67,6 +119,9 @@
                 </thead>
                 <tbody>
                     @foreach ($timeRanges as $range)
+                    @if ($isToday && $range < $currentTime)
+                        @continue
+                    @endif
                     <tr>
                         <td class="" style="vertical-align: top;">
                             {{ $range }}
@@ -111,7 +166,7 @@
                                     {{-- ✅ available slot --}}
                                 @else
                                     <td class="text-center hoverCell" style="cursor: pointer;" data-bs-toggle="modal"
-                                        data-bs-target="#DriverBookingModal" 
+                                        data-bs-target="#DriverBookingModal"
                                         data-slug="{{ str()->slug($driver->Name) }}"
                                         data-driver_name="{{ $driver->Name }}"
                                         data-driver_nik="{{ $driver->NIK }}"
@@ -305,6 +360,8 @@
     const timeRanges = @json($timeRanges);
     const booked = @json($booked);
     const searchMapUrl = @js(config('map.nominatim.url'));
+    const isToday = @json(now()->format('Y-m-d') === "$year-$month-$day");
+    const currentTimeStr = @json(now()->format('H:i'));
 
     let highlightedIndex = -1;
     let filteredResults = [];
@@ -605,6 +662,8 @@
             stimeSelect.empty();
             stimeSelect.append(`<option value=''>-- Select Time --</option>`);
             timeRanges.forEach(time => {
+                if (isToday && toMinutes(time) < toMinutes(currentTimeStr)) return;
+
                 const timeToMinutes = toMinutes(time);
                 let overlap = false;
 
@@ -631,6 +690,8 @@
             stimeSelect.append(`<option value="">-- Select Time --</option>`);
 
             timeRanges.forEach(time => {
+                if (isToday && toMinutes(time) < toMinutes(currentTimeStr)) return;
+
                 const timeToMinutes = toMinutes(time);
                 let overlap = false;
 

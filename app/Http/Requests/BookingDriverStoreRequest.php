@@ -27,7 +27,14 @@ class BookingDriverStoreRequest extends FormRequest
             'month' => ['required'],
             'day' => ['required'],
             'time' => ['required'],
-            'stime' => ['required'],
+            'stime' => ['required', function ($attribute, $value, $fail) {
+                $bookingDateTime = \Carbon\Carbon::parse(
+                    $this->input('year') . '-' . $this->input('month') . '-' . $this->input('day') . ' ' . $value
+                );
+                if ($bookingDateTime->isPast()) {
+                    $fail('The scheduled pickup time cannot be in the past.');
+                }
+            }],
             'etime' => ['required'],
             'destination' => ['required'],
             'purpose_of_trip' => ['required'],
