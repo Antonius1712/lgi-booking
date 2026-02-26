@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class BookingDriverCreatedMail extends Mailable implements ShouldQueue
+class BookingDriverDepartureMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -19,7 +19,7 @@ class BookingDriverCreatedMail extends Mailable implements ShouldQueue
 
     public function build(): self
     {
-        return $this->view('emails.booking.driver-created')
-            ->subject('Konfirmasi Pemesanan Driver Anda Berhasil!');
+        return $this->view('emails.booking.driver-departure')
+            ->subject('Anda sudah dalam perjalanan!');
     }
 }

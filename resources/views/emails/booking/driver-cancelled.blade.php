@@ -1,5 +1,5 @@
 <x-emails.layouts.base
-    title="Konfirmasi Pemesanan Driver Berhasil!"
+    title="Konfirmasi Pembatalan Perjalanan Anda!"
     accentColor="#fd7e14"
 >
     <p style="margin:0 0 16px; font-size:15px; color:#343a40; line-height:1.6;">
@@ -8,11 +8,11 @@
 
     @if($recipientRole === 'booker')
         <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
-            Kami menginformasikan bahwa pemesanan driver Anda dengan detail berikut telah <strong>berhasil</strong>:
+            Dengan menyesal kami informasikan bahwa pemesanan driver Anda telah <strong>dibatalkan</strong>.
         </p>
     @else
         <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
-            Anda telah ditugaskan untuk perjalanan baru. Berikut detail pemesanan:
+            Perjalanan yang sebelumnya ditugaskan kepada Anda telah <strong>dibatalkan</strong> oleh pemohon.
         </p>
     @endif
 
@@ -42,32 +42,18 @@
             <td style="padding:12px 16px; font-size:14px; color:#212529; font-weight:600; border-bottom:1px solid #f1f3f5;">{{ $booking->destination ?? '-' }}</td>
         </tr>
         <tr>
-            <td style="padding:12px 16px; font-size:14px; color:#6c757d;">Keperluan</td>
-            <td style="padding:12px 16px; font-size:14px; color:#212529; font-weight:600;">{{ $booking->purpose_of_trip ?? '-' }}</td>
+            <td style="padding:12px 16px; font-size:14px; color:#6c757d; border-bottom:1px solid #f1f3f5;">Keperluan</td>
+            <td style="padding:12px 16px; font-size:14px; color:#212529; font-weight:600; border-bottom:1px solid #f1f3f5;">{{ $booking->purpose_of_trip ?? '-' }}</td>
         </tr>
+        @if($booking->cancelation_reason)
+        <tr style="background-color:#fff5f5;">
+            <td style="padding:12px 16px; font-size:14px; color:#6c757d;">Alasan Pembatalan</td>
+            <td style="padding:12px 16px; font-size:14px; color:#dc3545; font-weight:600;">{{ $booking->cancelation_reason }}</td>
+        </tr>
+        @endif
     </table>
 
-    {{-- Info Box --}}
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fff3cd; border:1px solid #ffc107; border-radius:6px; margin-bottom:24px;">
-        <tr>
-            <td style="padding:14px 16px;">
-                <p style="margin:0; font-size:13px; color:#856404; font-weight:700;">&#9432; Informasi Penting</p>
-                <p style="margin:6px 0 0; font-size:13px; color:#856404; line-height:1.6;">
-                    Mohon konfirmasi jika ada perubahan rencana. Anda dapat membatalkan atau mengubah pesanan melalui tautan di bawah ini.
-                </p>
-            </td>
-        </tr>
-    </table>
-
-    {{-- CTA Button --}}
-    <table width="100%" cellpadding="0" cellspacing="0">
-        <tr>
-            <td align="center">
-                <a href="{{ route('home') }}"
-                   style="display:inline-block; background-color:#28a745; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:6px; font-size:14px; font-weight:700;">
-                    Kelola Pemesanan
-                </a>
-            </td>
-        </tr>
-    </table>
+    <p style="margin:0; font-size:14px; color:#6c757d; line-height:1.6; text-align:center;">
+        Terima kasih telah menggunakan layanan kami.
+    </p>
 </x-emails.layouts.base>

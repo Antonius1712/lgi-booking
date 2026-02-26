@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\BookingDriverCancelAction;
 use App\Actions\BookingDriverStoreAction;
 use App\Actions\BookingDriverUpdateAction;
 use App\Enums\RoleEnum;
@@ -15,6 +16,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -62,6 +64,7 @@ class BookingDriverController extends Controller
         // dd($date, $day, $request->day);
         $booked = DriverBooking::query()
             ->where('scheduled_pickup_date', $date)
+            ->where('status', '!=', 'cancelled')
             ->with(['user:NIK,Name', 'driver:NIK,Name'])
             ->get();
 
@@ -91,26 +94,27 @@ class BookingDriverController extends Controller
         return back()->with(['success' => 'Sukses']);
     }
 
+    public function cancel(DriverBooking $driverBooking, #[CurrentUser] User $user, BookingDriverCancelAction $action): RedirectResponse
+    {
+        abort_if($driverBooking->user_nik !== $user->NIK, 403);
+        $action->handle($driverBooking);
+
+        return back()->with(['success' => 'Pemesanan berhasil dibatalkan.']);
+    }
+
     /**
      * Update the specified resource in storage.
      */
-    public function update(BookingDriverUpdateRequest $request, string $id, BookingDriverUpdateAction $action): RedirectResponse
+    public function update(BookingDriverUpdateRequest $request, DriverBooking $driverBooking, #[CurrentUser] User $user, BookingDriverUpdateAction $action): RedirectResponse
     {
+        abort_if($driverBooking->user_nik !== $user->NIK, 403);
         try {
-            $action->handle($id, $request);
+            $action->handle($driverBooking, $request);
         } catch (Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
 
         return back()->with(['success' => 'Sukses']);
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
     }
 
     private function timeSlot()
@@ -139,37 +143,37 @@ class BookingDriverController extends Controller
         return $timeRanges;
     }
 
-    public function fetchData(Request $request)
-    {
-        $roomId = MeetingRoom::where('slug', $request->room)->value('id');
-        if (! $roomId) {
-            return response()->json([], 404);
-        }
+    // public function fetchData(Request $request)
+    // {
+    //     $roomId = MeetingRoom::where('slug', $request->room)->value('id');
+    //     if (! $roomId) {
+    //         return response()->json([], 404);
+    //     }
 
-        $bookedTimes = Booking::where('meeting_room_id', $roomId)
-            ->where('booking_date', $request->date)
-            ->where('status', 'confirmed')
-            ->pluck('start_time')
-            ->map(fn ($t) => Carbon::parse($t)->format('H:i'))
-            ->toArray();
+    //     $bookedTimes = Booking::where('meeting_room_id', $roomId)
+    //         ->where('booking_date', $request->date)
+    //         ->where('status', 'confirmed')
+    //         ->pluck('start_time')
+    //         ->map(fn ($t) => Carbon::parse($t)->format('H:i'))
+    //         ->toArray();
 
-        // generate slots 08:00–17:00 (30 min)
-        $slots = [];
-        $start = Carbon::createFromTime(8, 0);
-        $end = Carbon::createFromTime(17, 0);
+    //     // generate slots 08:00–17:00 (30 min)
+    //     $slots = [];
+    //     $start = Carbon::createFromTime(8, 0);
+    //     $end = Carbon::createFromTime(17, 0);
 
-        while ($start < $end) {
-            $time = $start->format('H:i');
+    //     while ($start < $end) {
+    //         $time = $start->format('H:i');
 
-            $slots[] = [
-                'time' => $time,
-                'label' => $time,
-                'disabled' => in_array($time, $bookedTimes),
-            ];
+    //         $slots[] = [
+    //             'time' => $time,
+    //             'label' => $time,
+    //             'disabled' => in_array($time, $bookedTimes),
+    //         ];
 
-            $start->addMinutes(30);
-        }
+    //         $start->addMinutes(30);
+    //     }
 
-        return response()->json($slots);
-    }
+    //     return response()->json($slots);
+    // }
 }

@@ -312,7 +312,7 @@
 
             <form id="formCancelAction" method="post">
                 @csrf
-                @method('delete')
+                @method('patch')
             </form>
 
             <div class="modal-footer">
@@ -522,12 +522,12 @@
         let routeUpdate = @js(route('booking.driver.update', '__ID__'));
         routeUpdate = routeUpdate.replace('__ID__', booking_id);
 
-        let routeCancel = @js(route('booking.driver.destroy', '__ID__'));
-        routeCancel = routeCancel.replace('__ID__', booking_id);
+        let cancelRoute = @js(route('booking.driver.cancel', '__ID__'));
+        cancelRoute = cancelRoute.replace('__ID__', booking_id);
+        document.getElementById('formCancelAction').action = cancelRoute;
 
         // Change modal title
-        modal.find('#formEditAction').attr('action', routeUpdate);    
-        modal.find('#formCancelAction').attr('action', routeCancel);    
+        modal.find('#formEditAction').attr('action', routeUpdate);
         modal.find('.edit_driver_name').val(driver_name);
         modal.find('.edit_driver_slug').val(slug);
         modal.find('.edit_driver_nik').val(slug);

@@ -24,7 +24,10 @@ class EmailTemplate extends Model
     {
         return match ($type) {
             'booking_driver' => 'Driver Booking Confirmation',
+            'reminder_driver' => 'Driver Booking Reminder',
             'cancel_driver' => 'Driver Booking Cancelled',
+            'departure_driver' => 'Driver Booking Departure',
+            'ending_soon_driver' => 'Driver Booking Ending Soon',
             'extend_driver' => 'Driver Booking Extended',
             'complete_driver' => 'Driver Booking Completed',
             'booking_room' => 'Meeting Room Booking Confirmation',
@@ -38,7 +41,10 @@ class EmailTemplate extends Model
     {
         return [
             'booking_driver',
+            'reminder_driver',
             'cancel_driver',
+            'departure_driver',
+            'ending_soon_driver',
             'extend_driver',
             'complete_driver',
             'booking_room',

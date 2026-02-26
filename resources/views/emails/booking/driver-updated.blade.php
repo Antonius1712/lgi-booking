@@ -1,5 +1,5 @@
 <x-emails.layouts.base
-    title="Konfirmasi Pemesanan Driver Berhasil!"
+    title="Pembaruan Pemesanan Driver!"
     accentColor="#fd7e14"
 >
     <p style="margin:0 0 16px; font-size:15px; color:#343a40; line-height:1.6;">
@@ -8,11 +8,11 @@
 
     @if($recipientRole === 'booker')
         <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
-            Kami menginformasikan bahwa pemesanan driver Anda dengan detail berikut telah <strong>berhasil</strong>:
+            Kami menginformasikan bahwa pemesanan driver Anda telah <strong>diperbarui</strong>. Berikut detail terbaru:
         </p>
     @else
         <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
-            Anda telah ditugaskan untuk perjalanan baru. Berikut detail pemesanan:
+            Detail perjalanan yang ditugaskan kepada Anda telah <strong>diperbarui</strong>. Berikut informasi terbaru:
         </p>
     @endif
 
@@ -52,9 +52,15 @@
         <tr>
             <td style="padding:14px 16px;">
                 <p style="margin:0; font-size:13px; color:#856404; font-weight:700;">&#9432; Informasi Penting</p>
-                <p style="margin:6px 0 0; font-size:13px; color:#856404; line-height:1.6;">
-                    Mohon konfirmasi jika ada perubahan rencana. Anda dapat membatalkan atau mengubah pesanan melalui tautan di bawah ini.
-                </p>
+                @if($recipientRole === 'booker')
+                    <p style="margin:6px 0 0; font-size:13px; color:#856404; line-height:1.6;">
+                        Mohon konfirmasi jika ada perubahan rencana. Anda dapat membatalkan atau mengubah pesanan melalui tautan di bawah ini.
+                    </p>
+                @else
+                    <p style="margin:6px 0 0; font-size:13px; color:#856404; line-height:1.6;">
+                        Harap perhatikan perubahan jadwal dan pastikan Anda siap sesuai waktu yang telah diperbarui.
+                    </p>
+                @endif
             </td>
         </tr>
     </table>

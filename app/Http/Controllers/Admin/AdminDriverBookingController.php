@@ -2,13 +2,21 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Admin\CancelDriverBookingAction;
+use App\Actions\Admin\ChangeDriverAction;
+use App\Actions\Admin\ConfirmDriverBookingAction;
+use App\Actions\Admin\ExtendDriverBookingAction;
+use App\Actions\Admin\RescheduleDriverBookingAction;
 use App\Enums\DriverBookingStatusEnum;
 use App\Enums\RoleEnum;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CancelDriverBookingRequest;
+use App\Http\Requests\Admin\ChangeDriverRequest;
+use App\Http\Requests\Admin\ExtendDriverBookingRequest;
+use App\Http\Requests\Admin\RescheduleDriverBookingRequest;
 use App\Models\BookingLog;
 use App\Models\DriverBooking;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -96,18 +104,9 @@ class AdminDriverBookingController extends Controller
 
     // ── Confirm ───────────────────────────────────────────────────────
 
-    public function confirm(DriverBooking $driverBooking): RedirectResponse
+    public function confirm(DriverBooking $driverBooking, ConfirmDriverBookingAction $action): RedirectResponse
     {
-        $old = $driverBooking->status;
-
-        $driverBooking->update([
-            'status' => DriverBookingStatusEnum::DEPARTURE->value,
-            'actual_pickup_at' => now(),
-        ]);
-
-        $driverBooking->log('confirmed', $old, DriverBookingStatusEnum::DEPARTURE->value);
-
-        // TODO: SendDepartureEmailToUser::dispatch($driverBooking);
+        $action->handle($driverBooking);
 
         return redirect()->route('admin.driver-bookings.show', $driverBooking)
             ->with('success', "Booking {$driverBooking->booking_number} confirmed as departed.");
@@ -115,27 +114,9 @@ class AdminDriverBookingController extends Controller
 
     // ── Cancel ────────────────────────────────────────────────────────
 
-    public function cancel(Request $request, DriverBooking $driverBooking): RedirectResponse
+    public function cancel(CancelDriverBookingRequest $request, DriverBooking $driverBooking, CancelDriverBookingAction $action): RedirectResponse
     {
-        $request->validate([
-            'cancelation_reason' => ['required', 'string', 'max:500'],
-        ]);
-
-        $old = $driverBooking->status;
-
-        $driverBooking->update([
-            'status' => DriverBookingStatusEnum::CANCELLED->value,
-            'cancelled_by' => auth()->user()->NIK,
-            'cancelled_at' => now(),
-            'cancelation_reason' => $request->cancelation_reason,
-        ]);
-
-        $driverBooking->log(
-            'cancelled', $old, DriverBookingStatusEnum::CANCELLED->value,
-            ['reason' => $request->cancelation_reason],
-        );
-
-        // TODO: SendCancelledByAdminEmail::dispatch($driverBooking);
+        $action->handle($driverBooking, $request);
 
         return redirect()->route('admin.driver-bookings.show', $driverBooking)
             ->with('success', "Booking {$driverBooking->booking_number} cancelled.");
@@ -143,49 +124,9 @@ class AdminDriverBookingController extends Controller
 
     // ── Change Driver ─────────────────────────────────────────────────
 
-    public function changeDriver(Request $request, DriverBooking $driverBooking): RedirectResponse
+    public function changeDriver(ChangeDriverRequest $request, DriverBooking $driverBooking, ChangeDriverAction $action): RedirectResponse
     {
-        $request->validate([
-            'driver_nik' => ['required', 'string', 'exists:LgiGlobal114.users,NIK'],
-        ]);
-
-        $oldNik = $driverBooking->driver_nik;
-        $newNik = $request->driver_nik;
-
-        if ($oldNik === $newNik) {
-            return back()->withErrors(['driver_nik' => 'New driver is the same as current driver.']);
-        }
-
-        // Check new driver is free for this date + time slot
-        $conflict = $this->driverConflict(
-            $newNik,
-            $driverBooking->scheduled_pickup_date,
-            $driverBooking->scheduled_pickup_time,
-            $driverBooking->scheduled_end_time,
-            $driverBooking->id,
-        );
-
-        if ($conflict) {
-            return back()->withErrors([
-                'driver_nik' => "Driver is already booked during this slot ({$conflict->booking_number}, "
-                    .Carbon::parse($conflict->scheduled_pickup_time)->format('H:i').'–'
-                    .Carbon::parse($conflict->scheduled_end_time)->format('H:i').').',
-            ]);
-        }
-
-        $old = $driverBooking->status;
-
-        $driverBooking->update([
-            'driver_nik' => $newNik,
-            'status' => DriverBookingStatusEnum::DRIVER_CHANGED->value,
-        ]);
-
-        $driverBooking->log(
-            'driver_changed', $old, DriverBookingStatusEnum::DRIVER_CHANGED->value,
-            ['old_driver_nik' => $oldNik, 'new_driver_nik' => $newNik],
-        );
-
-        // TODO: SendDriverChangedEmail::dispatch($driverBooking, $oldNik);
+        $action->handle($driverBooking, $request);
 
         return redirect()->route('admin.driver-bookings.show', $driverBooking)
             ->with('success', "Driver changed for booking {$driverBooking->booking_number}.");
@@ -193,135 +134,22 @@ class AdminDriverBookingController extends Controller
 
     // ── Extend Duration ───────────────────────────────────────────────
 
-    public function extend(Request $request, DriverBooking $driverBooking): RedirectResponse
+    public function extend(ExtendDriverBookingRequest $request, DriverBooking $driverBooking, ExtendDriverBookingAction $action): RedirectResponse
     {
-        $request->validate([
-            'extend_hours' => ['required', 'integer', 'in:1,2,3'],
-        ]);
-
-        if (! in_array($driverBooking->status, [
-            DriverBookingStatusEnum::DEPARTURE->value,
-            DriverBookingStatusEnum::EXTENDING->value,
-        ])) {
-            return back()->withErrors(['extend_hours' => 'Can only extend an active trip.']);
-        }
-
-        $hours = (int) $request->extend_hours;
-        $oldEnd = Carbon::parse($driverBooking->scheduled_end_time);
-        $newEnd = $oldEnd->copy()->addHours($hours);
-        $old = $driverBooking->status;
-
-        // Overlap check
-        $conflict = DriverBooking::query()
-            ->where('driver_nik', $driverBooking->driver_nik)
-            ->where('scheduled_pickup_date', $driverBooking->scheduled_pickup_date)
-            ->where('id', '!=', $driverBooking->id)
-            ->whereNotIn('status', [
-                DriverBookingStatusEnum::CANCELLED->value,
-                DriverBookingStatusEnum::AUTO_CANCELLED->value,
-                DriverBookingStatusEnum::COMPLETED->value,
-            ])
-            ->where('scheduled_pickup_time', '<', $newEnd->format('H:i:s'))
-            ->where('scheduled_end_time', '>', $oldEnd->format('H:i:s'))
-            ->first();
-
-        if ($conflict) {
-            return back()->withErrors([
-                'extend_hours' => "Cannot extend: driver has another booking ({$conflict->booking_number}) "
-                    .'at '.Carbon::parse($conflict->scheduled_pickup_time)->format('H:i').'.',
-            ]);
-        }
-
-        $driverBooking->update([
-            'scheduled_end_time' => $newEnd->format('H:i:s'),
-            'scheduled_duration' => $driverBooking->scheduled_duration + ($hours * 60),
-            'status' => DriverBookingStatusEnum::EXTENDING->value,
-        ]);
-
-        $driverBooking->log(
-            'extended', $old, DriverBookingStatusEnum::EXTENDING->value,
-            ['hours_added' => $hours, 'old_end' => $oldEnd->format('H:i'), 'new_end' => $newEnd->format('H:i')],
-        );
-
-        // TODO: SendExtensionApprovedEmail::dispatch($driverBooking);
+        $action->handle($driverBooking, $request);
 
         return redirect()->route('admin.driver-bookings.show', $driverBooking)
-            ->with('success', "Trip extended by {$hours}h. New end time: {$newEnd->format('H:i')} WIB.");
+            ->with('success', "Trip extended. New end time: {$driverBooking->fresh()->scheduled_end_time} WIB.");
     }
 
     // ── Reschedule ────────────────────────────────────────────────────
 
-    public function reschedule(Request $request, DriverBooking $driverBooking): RedirectResponse
+    public function reschedule(RescheduleDriverBookingRequest $request, DriverBooking $driverBooking, RescheduleDriverBookingAction $action): RedirectResponse
     {
-        $request->validate([
-            'pickup_date' => ['required', 'date', 'after_or_equal:today'],
-            'pickup_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:pickup_time'],
-        ]);
-
-        if (in_array($driverBooking->status, [
-            DriverBookingStatusEnum::COMPLETED->value,
-            DriverBookingStatusEnum::CANCELLED->value,
-            DriverBookingStatusEnum::AUTO_CANCELLED->value,
-            DriverBookingStatusEnum::DEPARTURE->value,
-            DriverBookingStatusEnum::EXTENDING->value,
-        ])) {
-            return back()->withErrors(['pickup_date' => 'Cannot reschedule a trip that is active or already terminal.']);
-        }
-
-        $newDate = $request->pickup_date;
-        $newPickupTime = $request->pickup_time.':00';
-        $newEndTime = $request->end_time.':00';
-
-        // Check driver availability at the new slot
-        $conflict = $this->driverConflict(
-            $driverBooking->driver_nik,
-            $newDate,
-            $newPickupTime,
-            $newEndTime,
-            $driverBooking->id,
-        );
-
-        if ($conflict) {
-            return back()->withErrors([
-                'pickup_date' => "Driver is already booked during the new slot ({$conflict->booking_number}, "
-                    .Carbon::parse($conflict->scheduled_pickup_time)->format('H:i').'–'
-                    .Carbon::parse($conflict->scheduled_end_time)->format('H:i').').',
-            ]);
-        }
-
-        $old = $driverBooking->status;
-        $oldDate = $driverBooking->scheduled_pickup_date?->toDateString();
-        $oldPickup = Carbon::parse($driverBooking->scheduled_pickup_time)->format('H:i');
-        $oldEnd = Carbon::parse($driverBooking->scheduled_end_time)->format('H:i');
-
-        // Recalculate duration in minutes
-        $newDuration = Carbon::parse($newPickupTime)->diffInMinutes(Carbon::parse($newEndTime));
-
-        $driverBooking->update([
-            'scheduled_pickup_date' => $newDate,
-            'scheduled_pickup_time' => $newPickupTime,
-            'scheduled_end_time' => $newEndTime,
-            'scheduled_duration' => $newDuration,
-            'status' => DriverBookingStatusEnum::RESCHEDULING->value,
-        ]);
-
-        $driverBooking->log(
-            'rescheduled', $old, DriverBookingStatusEnum::RESCHEDULING->value,
-            [
-                'old_date' => $oldDate,
-                'old_pickup' => $oldPickup,
-                'old_end' => $oldEnd,
-                'new_date' => $newDate,
-                'new_pickup' => $request->pickup_time,
-                'new_end' => $request->end_time,
-            ],
-        );
-
-        // TODO: SendRescheduledEmail::dispatch($driverBooking);
+        $action->handle($driverBooking, $request);
 
         return redirect()->route('admin.driver-bookings.show', $driverBooking)
-            ->with('success', "Booking {$driverBooking->booking_number} rescheduled to {$newDate} {$request->pickup_time}–{$request->end_time}.");
+            ->with('success', "Booking {$driverBooking->booking_number} rescheduled to {$request->pickup_date} {$request->pickup_time}–{$request->end_time}.");
     }
 
     // ── AJAX: Available drivers ───────────────────────────────────────
@@ -372,30 +200,5 @@ class AdminDriverBookingController extends Controller
                 )
             )
             ->get(['NIK', 'Name']);
-    }
-
-    /**
-     * Check whether a driver has an overlapping booking on a given date+slot.
-     * Returns the conflicting booking if found, null if free.
-     */
-    private function driverConflict(
-        string $driverNik,
-        mixed $date,
-        mixed $startTime,
-        mixed $endTime,
-        ?int $excludeId = null,
-    ): ?DriverBooking {
-        return DriverBooking::query()
-            ->where('driver_nik', $driverNik)
-            ->where('scheduled_pickup_date', $date)
-            ->whereNotIn('status', [
-                DriverBookingStatusEnum::CANCELLED->value,
-                DriverBookingStatusEnum::AUTO_CANCELLED->value,
-                DriverBookingStatusEnum::COMPLETED->value,
-            ])
-            ->where('scheduled_pickup_time', '<', $endTime)
-            ->where('scheduled_end_time', '>', $startTime)
-            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
-            ->first();
     }
 }

@@ -1,20 +1,14 @@
 <x-emails.layouts.base
-    title="Konfirmasi Pemesanan Driver Berhasil!"
+    title="Pengingat Perjalanan Anda!"
     accentColor="#fd7e14"
 >
     <p style="margin:0 0 16px; font-size:15px; color:#343a40; line-height:1.6;">
         Yth. <strong>{{ $recipientRole === 'booker' ? $booking->user?->Name ?? 'Pengguna' : $booking->driver?->Name ?? 'Driver' }}</strong>,
     </p>
 
-    @if($recipientRole === 'booker')
-        <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
-            Kami menginformasikan bahwa pemesanan driver Anda dengan detail berikut telah <strong>berhasil</strong>:
-        </p>
-    @else
-        <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
-            Anda telah ditugaskan untuk perjalanan baru. Berikut detail pemesanan:
-        </p>
-    @endif
+    <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
+        Sekadar mengingatkan bahwa pemesanan mobil Anda akan segera dimulai <strong>15 menit lagi</strong>. Pastikan Anda sudah siap.
+    </p>
 
     {{-- Booking Detail Table --}}
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:24px; border-radius:6px; overflow:hidden; border: 1px solid #dee2e6;">
@@ -64,7 +58,7 @@
         <tr>
             <td align="center">
                 <a href="{{ route('home') }}"
-                   style="display:inline-block; background-color:#28a745; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:6px; font-size:14px; font-weight:700;">
+                   style="display:inline-block; background-color:#fd7e14; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:6px; font-size:14px; font-weight:700;">
                     Kelola Pemesanan
                 </a>
             </td>

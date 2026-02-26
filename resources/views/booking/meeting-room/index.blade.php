@@ -261,6 +261,11 @@
                 </h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form id="formCancelAction" method="POST" style="display:none;">
+                @csrf
+                @method('PATCH')
+            </form>
+
             <form id="formEditAction" action="{{ route('booking.meeting-room.store') }}" method="post">
                 @csrf
                 @method('put')
@@ -311,6 +316,10 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger modal-footer-cancel-btn" style="display:none;"
+                        onclick="if(confirm('Yakin ingin membatalkan booking ini?')) { document.getElementById('formCancelAction').submit(); }">
+                        Cancel Booking
+                    </button>
                     <button type="submit" class="btn btn-primary modal-footer-button-save">Save changes</button>
                 </div>
             </form>
@@ -460,8 +469,16 @@
             modal.find('.modal-title').text('Edit Booking Room ' + room);
 
             const isOwner = nik_booking === nik_login;
-            if (!isOwner) {
+
+            let cancelRoute = @js(route('booking.meeting-room.cancel', '__ID__'));
+            cancelRoute = cancelRoute.replace('__ID__', idBooking);
+            document.getElementById('formCancelAction').action = cancelRoute;
+
+            if (isOwner) {
+                $('.modal-footer-cancel-btn').show();
+            } else {
                 $('.modal-footer').hide();
+                $('.modal-footer-cancel-btn').hide();
                 $('#e_stime').attr('disabled', true);
                 $('#e_etime').attr('disabled', true);
                 $('#e_description').attr('disabled', true);

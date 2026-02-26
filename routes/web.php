@@ -17,8 +17,9 @@ use App\Http\Controllers\MyBookingMeetingRoomController;
 use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/sf', function(){
+Route::get('/sf', function () {
     session()->flush();
+
     return redirect()->route('login');
 });
 
@@ -80,8 +81,14 @@ Route::middleware(['auth'])->group(function () {
 
     Route::prefix('booking')->as('booking.')->group(function () {
         Route::get('/fetch-data', [BookingMeetingController::class, 'fetchData'])->name('fetchData');
-        Route::resource('/meeting-room', BookingMeetingController::class);
-        Route::resource('/driver', BookingDriverController::class);
+        Route::patch('/meeting-room/{meetingRoomBooking}/cancel', [BookingMeetingController::class, 'cancel'])->name('meeting-room.cancel');
+        Route::resource('/meeting-room', BookingMeetingController::class)
+            ->parameters(['meeting-room' => 'meetingRoomBooking'])
+            ->except(['edit', 'show', 'destroy']);
+        Route::patch('/driver/{driverBooking}/cancel', [BookingDriverController::class, 'cancel'])->name('driver.cancel');
+        Route::resource('/driver', BookingDriverController::class)
+            ->parameters(['driver' => 'driverBooking'])
+            ->except(['edit', 'show', 'destroy']);
     });
 
     Route::prefix('my-booking')->as('my-booking.')->group(function () {

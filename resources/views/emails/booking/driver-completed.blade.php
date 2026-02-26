@@ -1,20 +1,14 @@
 <x-emails.layouts.base
-    title="Konfirmasi Pemesanan Driver Berhasil!"
+    title="Konfirmasi Perjalanan anda berakhir!"
     accentColor="#fd7e14"
 >
     <p style="margin:0 0 16px; font-size:15px; color:#343a40; line-height:1.6;">
         Yth. <strong>{{ $recipientRole === 'booker' ? $booking->user?->Name ?? 'Pengguna' : $booking->driver?->Name ?? 'Driver' }}</strong>,
     </p>
 
-    @if($recipientRole === 'booker')
-        <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
-            Kami menginformasikan bahwa pemesanan driver Anda dengan detail berikut telah <strong>berhasil</strong>:
-        </p>
-    @else
-        <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
-            Anda telah ditugaskan untuk perjalanan baru. Berikut detail pemesanan:
-        </p>
-    @endif
+    <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
+        Kami informasikan bahwa perjalanan Anda telah <strong>berakhir</strong>.
+    </p>
 
     {{-- Booking Detail Table --}}
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:24px; border-radius:6px; overflow:hidden; border: 1px solid #dee2e6;">
@@ -47,25 +41,17 @@
         </tr>
     </table>
 
-    {{-- Info Box --}}
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fff3cd; border:1px solid #ffc107; border-radius:6px; margin-bottom:24px;">
-        <tr>
-            <td style="padding:14px 16px;">
-                <p style="margin:0; font-size:13px; color:#856404; font-weight:700;">&#9432; Informasi Penting</p>
-                <p style="margin:6px 0 0; font-size:13px; color:#856404; line-height:1.6;">
-                    Mohon konfirmasi jika ada perubahan rencana. Anda dapat membatalkan atau mengubah pesanan melalui tautan di bawah ini.
-                </p>
-            </td>
-        </tr>
-    </table>
+    <p style="margin:0 0 20px; font-size:14px; color:#343a40; line-height:1.6; text-align:center;">
+        Terima kasih telah melakukan pemesanan ini! Mohon kesediaannya memberikan kesan dan pesan perjalanan Anda.
+    </p>
 
     {{-- CTA Button --}}
     <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
             <td align="center">
                 <a href="{{ route('home') }}"
-                   style="display:inline-block; background-color:#28a745; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:6px; font-size:14px; font-weight:700;">
-                    Kelola Pemesanan
+                   style="display:inline-block; background-color:#6c757d; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:6px; font-size:14px; font-weight:700;">
+                    Berikan Ulasan
                 </a>
             </td>
         </tr>

@@ -22,6 +22,9 @@ class MeetingRoomBooking extends Model
         'description',
         'usage_type',
         'guest_emails',
+        'cancelled_by',
+        'cancelled_at',
+        'cancelation_reason',
     ];
 
     protected $casts = [
@@ -30,6 +33,7 @@ class MeetingRoomBooking extends Model
         'end_time' => 'datetime:H:i:s',
         'all_day' => 'boolean',
         'guest_emails' => 'array',
+        'cancelled_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

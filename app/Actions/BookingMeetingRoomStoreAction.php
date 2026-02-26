@@ -2,12 +2,14 @@
 
 namespace App\Actions;
 
+use App\Mail\BookingRoomCreatedMail;
 use App\Models\MeetingRoom;
 use App\Models\MeetingRoomBooking;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class BookingMeetingRoomStoreAction
 {
@@ -26,8 +28,6 @@ class BookingMeetingRoomStoreAction
                 $usage_type = $request->usage_type;
                 $guests = json_decode($request->input('participants_json', '[]'), true) ?: [];
 
-                // dd($guests);
-
                 $meeting_room = MeetingRoom::where('slug', $room)->with('location')->first();
                 $room_id = $meeting_room->id;
                 $location = $meeting_room->location->slug;
@@ -37,7 +37,18 @@ class BookingMeetingRoomStoreAction
                 $start_time = $stime;
                 $end_time = $etime;
 
-                MeetingRoomBooking::create([
+                $conflict = MeetingRoomBooking::query()
+                    ->where('meeting_room_id', $room_id)
+                    ->where('booking_date', $booking_date)
+                    ->where('time_slot', $time_slot)
+                    ->whereNotIn('status', ['cancelled', 'Cancelled'])
+                    ->exists();
+
+                if ($conflict) {
+                    throw new Exception('Slot waktu ini sudah dibooking oleh pengguna lain.');
+                }
+
+                $booking = MeetingRoomBooking::create([
                     'meeting_room_id' => $room_id,
                     'nik' => auth()->user()->NIK,
                     'booking_date' => $booking_date,
@@ -50,6 +61,8 @@ class BookingMeetingRoomStoreAction
                     'location' => $location,
                     'guest_emails' => $guests,
                 ]);
+
+                $this->sendNotifications($booking);
             });
         } catch (Exception $e) {
             dd(
@@ -57,6 +70,23 @@ class BookingMeetingRoomStoreAction
                 $e->getFile(),
                 $e->getLine()
             );
+        }
+    }
+
+    private function sendNotifications(MeetingRoomBooking $booking): void
+    {
+        $testing_email = 'it-dba07@lgi.co.id';
+
+        $guestEmails = collect($booking->guest_emails ?? [])
+            ->pluck('email')
+            ->filter();
+
+        $recipients = collect([$testing_email])
+            ->merge($guestEmails)
+            ->unique();
+
+        foreach ($recipients as $email) {
+            Mail::to($email)->queue(new BookingRoomCreatedMail($booking));
         }
     }
 }

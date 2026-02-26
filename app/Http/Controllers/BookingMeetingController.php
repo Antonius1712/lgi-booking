@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\BookingMeetingRoomCancelAction;
 use App\Actions\BookingMeetingRoomStoreAction;
 use App\Actions\BookingMeetingRoomUpdateAction;
 use App\Enums\UsageTypeEnum;
@@ -10,8 +11,10 @@ use App\Http\Requests\BookingMeetingRoomUpdateRequest;
 use App\Models\MeetingRoom;
 use App\Models\MeetingRoomBooking;
 use App\Models\Setting;
+use App\Models\User;
 use App\Services\MiniCalendars;
 use Carbon\Carbon;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -51,6 +54,7 @@ class BookingMeetingController extends Controller
 
         $booked = MeetingRoomBooking::query()
             ->where('booking_date', $date)
+            ->where('status', 'booked')
             ->with(['meetingRoom:id,slug', 'user:NIK,Name'])
             ->get(['id', 'nik', 'meeting_room_id', 'start_time', 'end_time', 'description', 'guest_emails']);
 
@@ -66,12 +70,20 @@ class BookingMeetingController extends Controller
         return back()->with(['success' => 'Sukses']);
     }
 
-    public function update($id, BookingMeetingRoomUpdateRequest $request, BookingMeetingRoomUpdateAction $action): RedirectResponse
+    public function update(BookingMeetingRoomUpdateRequest $request, MeetingRoomBooking $meetingRoomBooking, #[CurrentUser] User $user, BookingMeetingRoomUpdateAction $action): RedirectResponse
     {
-        // dd($id);
-        $action->handle($id, $request);
+        abort_if($meetingRoomBooking->nik !== $user->NIK, 403);
+        $action->handle($meetingRoomBooking, $request);
 
         return back()->with(['success' => 'Sukses']);
+    }
+
+    public function cancel(MeetingRoomBooking $meetingRoomBooking, #[CurrentUser] User $user, BookingMeetingRoomCancelAction $action): RedirectResponse
+    {
+        abort_if($meetingRoomBooking->nik !== $user->NIK, 403);
+        $action->handle($meetingRoomBooking);
+
+        return back()->with(['success' => 'Pemesanan berhasil dibatalkan.']);
     }
 
     private function timeSlot()
