@@ -17,6 +17,11 @@ use App\Http\Controllers\MyBookingMeetingRoomController;
 use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/sf', function(){
+    session()->flush();
+    return redirect()->route('login');
+});
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -86,5 +91,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::prefix('services')->as('services.')->group(function () {
         Route::post('/search-user-by-nik', [ServiceController::class, 'searchUserByNik'])->name('search-user-by-nik');
+        Route::get('/search-user', [ServiceController::class, 'searchUser'])->name('search-user');
     });
 });

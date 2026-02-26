@@ -272,6 +272,7 @@
                 <input type="hidden" class="edit_month" name="month">
                 <input type="hidden" class="edit_day" name="day">
                 <input type="hidden" class="edit_time" name="time">
+                <input type="hidden" class="edit_booking_id">
 
                 <div class="modal-body position-relative">
                     <div class="form-group">
@@ -307,18 +308,18 @@
                         <textarea name="purpose_of_trip" id="edit_purpose_of_trip" cols="30" rows="10" class="form-control" placeholder="Enter Purpose of Trip" required></textarea>
                     </div>
                 </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    
-                    <form id="formCancelAction" method="post">
-                        @csrf
-                        @method('delete')
-                        <button type="submit" class="btn btn-primary modal-footer-button-cancel">Cancel Booking</button>
-                    </form>
-                    <button type="submit" class="btn btn-primary modal-footer-button-save">Save changes</button>
-                </div>
             </form>
+
+            <form id="formCancelAction" method="post">
+                @csrf
+                @method('delete')
+            </form>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" form="formCancelAction" class="btn btn-danger modal-footer-button-cancel">Cancel Booking</button>
+                <button type="submit" form="formEditAction" class="btn btn-primary modal-footer-button-save">Save changes</button>
+            </div>
         </div>
     </div>
 </div>
@@ -598,8 +599,8 @@
 
     $('#edit_stime').on('change', function() {
         const stime = $(this).val();
-        const slug = $('#EditDriverBookingModal .driver_slug').val();
-        const idBooking = parseInt($('#EditDriverBookingModal .booking_id').val());
+        const slug = $('#EditDriverBookingModal .edit_driver_slug').val();
+        const idBooking = parseInt($('#EditDriverBookingModal .edit_booking_id').val());
         generateEndTimes(stime, slug, idBooking);
     });
 

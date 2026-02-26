@@ -180,8 +180,22 @@
                     ? floor($startsIn/60).'h '.($startsIn%60).'m'
                     : $startsIn.'m' }}
                 </span>
+
+                {{-- TODO: Need to validate this button, can cancel if already send reminder 3 times. DriverBooking->reminder_count >= 3 --}}
+                <a href=""
+                    target="_blank" class="btn btn-outline-danger">
+                    <i class="icon-base bx bx-x-circle me-1"></i> Cancel Booking
+                </a>
+
+                {{-- TODO: Need to send reminder email notification to the booker. --}}
+                {{-- TODO: Need to update reminder_count in DriverBooking model --}}
+                <a href=""
+                    target="_blank" class="btn btn-outline-info">
+                    <i class="icon-base bx bx-alarm me-1"></i> Remind Booker
+                </a>
+
                 <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($trip->destination) }}"
-                    target="_blank" class="home-btn-nav">
+                    target="_blank" class="btn btn-outline-success">
                     <i class="icon-base bx bx-map me-1"></i> Open Maps
                 </a>
             </div>

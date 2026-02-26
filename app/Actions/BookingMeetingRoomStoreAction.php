@@ -24,6 +24,9 @@ class BookingMeetingRoomStoreAction
                 $etime = $request->etime;
                 $description = $request->description;
                 $usage_type = $request->usage_type;
+                $guests = json_decode($request->input('participants_json', '[]'), true) ?: [];
+
+                // dd($guests);
 
                 $meeting_room = MeetingRoom::where('slug', $room)->with('location')->first();
                 $room_id = $meeting_room->id;
@@ -45,6 +48,7 @@ class BookingMeetingRoomStoreAction
                     'description' => $description,
                     'usage_type' => $usage_type,
                     'location' => $location,
+                    'guest_emails' => $guests,
                 ]);
             });
         } catch (Exception $e) {

@@ -41,13 +41,6 @@
                 </div>
 
                 <div class="navbar-nav-right d-flex align-items-center justify-content-end" id="navbar-collapse">
-                    <div class="navbar-nav align-items-center">
-                        <div class="nav-item navbar-search-wrapper mb-0">
-                            <a class="nav-item nav-link search-toggler px-0" href="javascript:void(0);">
-                                <span class="d-inline-block text-body-secondary fw-normal" id="autocomplete"></span>
-                            </a>
-                        </div>
-                    </div>
                     <ul class="navbar-nav flex-row align-items-center ms-md-auto">
                         <li class="nav-item navbar-dropdown dropdown-user dropdown">
                             <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);"

@@ -5,6 +5,21 @@
 @section('content')
 <div class="card-body">
 
+    <div class="app-brand row text-center justify-content-center">
+        <a href="index.html" class="app-brand-link gap-2 col-12 d-block mx-auto">
+          <img src="{{ asset('assets/pdf/logo-lgi.png') }}" class="d-block mx-auto img-fluid" alt="">
+        </a>
+        <span class="app-brand-text demo text-heading fw-bold col-12">LGI Booking</span>
+      </div>
+
+      @if (count($errors))
+          <div class="col-xs-12 col-md-12 col-lg-12 p-0">
+              <div class="alert alert-danger">
+                  {{ $errors->all()[0] }}
+              </div>
+          </div>
+      @endif
+
     <form id="formAuthentication" class="mb-6" action="{{ route('login') }}" method="POST">
         @csrf
         <div class="mb-6 form-control-validation">

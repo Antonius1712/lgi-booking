@@ -11,7 +11,7 @@
         </p>
         <p class="welcome-sub">
             System overview — <strong>{{ $stats['total_driver_bookings'] }} driver bookings</strong> today,
-                    <strong>{{ $stats['on_trip'] }} on trip</strong> right now.
+            <strong>{{ $stats['on_trip_driver_bookings'] }} on trip</strong> right now.
         </p>
         <p class="welcome-date"><i class="icon-base bx bx-calendar me-1"></i>{{ now()->format('l, d F Y') }}</p>
     </div>
@@ -26,6 +26,17 @@
             <div class="home-stat-icon home-si-dark"><i class="icon-base bx bx-calendar-check"></i></div>
             <div>
                 <div class="home-stat-value">{{ $stats['total_driver_bookings'] }}</div>
+                <div class="home-stat-label">Today's Driver Booking</div>
+            </div>
+        </div>
+    </div>
+
+
+    {{-- <div class="card home-stat-card">
+        <div class="card-body d-flex align-items-center gap-3">
+            <div class="home-stat-icon home-si-dark"><i class="icon-base bx bx-calendar-check"></i></div>
+            <div>
+                <div class="home-stat-value">{{ $stats['total_driver_bookings'] }}</div>
                 <div class="home-stat-label">Driver Bookings</div>
             </div>
         </div>
@@ -34,8 +45,8 @@
         <div class="card-body d-flex align-items-center gap-3">
             <div class="home-stat-icon home-si-green"><i class="icon-base bx bx-car"></i></div>
             <div>
-                <div class="home-stat-value">{{ $stats['on_trip'] }}</div>
-                <div class="home-stat-label">On Trip Now</div>
+                <div class="home-stat-value">{{ $stats['on_trip_driver_bookings'] }}</div>
+                <div class="home-stat-label">Driver Booking On Trip Now</div>
             </div>
         </div>
     </div>
@@ -43,8 +54,8 @@
         <div class="card-body d-flex align-items-center gap-3">
             <div class="home-stat-icon home-si-purple"><i class="icon-base bx bx-hourglass"></i></div>
             <div>
-                <div class="home-stat-value">{{ $stats['upcoming'] }}</div>
-                <div class="home-stat-label">Upcoming</div>
+                <div class="home-stat-value">{{ $stats['upcoming_driver_booking'] }}</div>
+                <div class="home-stat-label">Upcoming Driver Bookings</div>
             </div>
         </div>
     </div>
@@ -52,8 +63,8 @@
         <div class="card-body d-flex align-items-center gap-3">
             <div class="home-stat-icon home-si-cyan"><i class="icon-base bx bx-check-circle"></i></div>
             <div>
-                <div class="home-stat-value">{{ $stats['completed_today'] }}</div>
-                <div class="home-stat-label">Completed</div>
+                <div class="home-stat-value">{{ $stats['driver_booking_completed_today'] }}</div>
+                <div class="home-stat-label">Driver Booking Completed</div>
             </div>
         </div>
     </div>
@@ -61,8 +72,8 @@
         <div class="card-body d-flex align-items-center gap-3">
             <div class="home-stat-icon home-si-red"><i class="icon-base bx bx-x-circle"></i></div>
             <div>
-                <div class="home-stat-value">{{ $stats['cancelled_today'] }}</div>
-                <div class="home-stat-label">Cancelled</div>
+                <div class="home-stat-value">{{ $stats['driver_booking_cancelled_today'] }}</div>
+                <div class="home-stat-label">Driver Booking Cancelled</div>
             </div>
         </div>
     </div>
@@ -70,11 +81,11 @@
         <div class="card-body d-flex align-items-center gap-3">
             <div class="home-stat-icon home-si-orange"><i class="icon-base bx bx-door-open"></i></div>
             <div>
-                <div class="home-stat-value">{{ $stats['rooms_in_use'] }}</div>
-                <div class="home-stat-label">Rooms In Use</div>
+                <div class="home-stat-value">{{ $stats['rooms_booked'] }}</div>
+                <div class="home-stat-label">Rooms Booked</div>
             </div>
         </div>
-    </div>
+    </div> --}}
 </div>
 
 {{-- ── MAIN GRID ── --}}
@@ -333,7 +344,7 @@
                                     data-pill-class="{{ $roomPill['class'] }}"
                                     data-pill-label="{{ $roomPill['label'] }}"
                                     data-pill-live="{{ !empty($roomPill['live']) ? '1' : '0' }}"
-                                    data-guest-emails="{{ is_array($booking->guest_emails) ? implode(', ', $booking->guest_emails) : ($booking->guest_emails ?? '') }}"
+                                    data-guest-emails="{{ is_array($booking->guest_emails) ? implode(', ', array_column($booking->guest_emails, 'email')) : ($booking->guest_emails ?? '') }}"
                                     data-created="{{ $booking->created_at?->format('d M Y H:i') }}">
                                     <i class="icon-base bx bx-show"></i>
                                 </button>

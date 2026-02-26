@@ -15,7 +15,6 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use phpDocumentor\Reflection\Types\Integer;
 
 class BookingMeetingController extends Controller
 {
@@ -53,7 +52,7 @@ class BookingMeetingController extends Controller
         $booked = MeetingRoomBooking::query()
             ->where('booking_date', $date)
             ->with(['meetingRoom:id,slug', 'user:NIK,Name'])
-            ->get(['id', 'nik', 'meeting_room_id', 'start_time', 'end_time', 'description']);
+            ->get(['id', 'nik', 'meeting_room_id', 'start_time', 'end_time', 'description', 'guest_emails']);
 
         $meetingRoomDays = (int) Setting::get('meeting_room_booking_days_ahead', 14);
 

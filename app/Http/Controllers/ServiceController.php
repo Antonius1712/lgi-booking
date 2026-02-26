@@ -7,6 +7,24 @@ use Illuminate\Http\Request;
 
 class ServiceController extends Controller
 {
+    public function searchUser(Request $request)
+    {
+        $keyword = $request->keywords;
+
+        $users = User::query()
+            ->when(! empty($keyword), function ($query) use ($keyword) {
+                $query->where(function ($q) use ($keyword) {
+                    $q->whereLike('Name', "%$keyword%")
+                        ->orWhereLike('NIK', "%$keyword%")
+                        ->orWhereLike('Email', "%$keyword%");
+                });
+            })
+            ->limit(10)
+            ->get(['Email', 'Name']);
+
+        return response()->json($users);
+    }
+
     public function searchUserByNik(Request $request)
     {
         $keyword = $request->keywords;

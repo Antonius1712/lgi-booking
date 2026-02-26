@@ -214,23 +214,20 @@ class HomeController extends Controller
         // Stats for today
         $stats = [
             'total_driver_bookings' => DriverBooking::whereDate('scheduled_pickup_date', today())->count(),
-            'on_trip' => DriverBooking::whereIn('status', $this->onTripStatusValues())->count(),
-            'upcoming' => DriverBooking::whereIn('status', $this->activeStatusValues())
-                ->where('scheduled_pickup_date', '>=', today())->count(),
-            'completed_today' => DriverBooking::where('status', DriverBookingStatusEnum::COMPLETED->value)
-                ->whereDate('scheduled_pickup_date', today())->count(),
-            'cancelled_today' => DriverBooking::whereIn('status', [
+            'on_trip_driver_bookings' => DriverBooking::whereIn('status', $this->onTripStatusValues())->whereDate('scheduled_pickup_date', today())->count(),
+            'upcoming_driver_booking' => DriverBooking::whereIn('status', $this->activeStatusValues())->where('scheduled_pickup_date', '>=', today())->count(),
+            'driver_booking_completed_today' => DriverBooking::where('status', DriverBookingStatusEnum::COMPLETED->value)->whereDate('scheduled_pickup_date', today())->count(),
+            'driver_booking_cancelled_today' => DriverBooking::whereIn('status', [
                 DriverBookingStatusEnum::CANCELLED->value,
                 DriverBookingStatusEnum::AUTO_CANCELLED->value,
             ])->whereDate('scheduled_pickup_date', today())->count(),
-            'rooms_in_use' => MeetingRoomBooking::where('status', 'departure')
-                ->whereDate('booking_date', today())->count(),
+            'rooms_booked' => MeetingRoomBooking::where('status', 'booked')->whereDate('booking_date', today())->count(),
         ];
 
         // All drivers with current on-trip status (avoid N+1 with eager load)
         $onTripNiks = DriverBooking::whereIn('status', $this->onTripStatusValues())
             ->where('scheduled_pickup_date', today())
-            ->pluck('scheduled_end_time', 'driver_nik');
+        ->pluck('scheduled_end_time', 'driver_nik');
 
         $drivers = User::query()
             ->whereHas('UserGroup', fn ($q) => $q
@@ -240,15 +237,15 @@ class HomeController extends Controller
                 )
             )
             ->get()
-            ->map(fn (User $driver) => [
-                'NIK' => $driver->NIK,
-                'Name' => $driver->Name,
-                'initials' => $driver->initials(),
-                'is_on_trip' => $onTripNiks->has($driver->NIK),
-                'ends_at' => $onTripNiks->has($driver->NIK)
-                                    ? \Carbon\Carbon::parse($onTripNiks[$driver->NIK])->format('H:i')
-                                    : null,
-            ]);
+        ->map(fn (User $driver) => [
+            'NIK' => $driver->NIK,
+            'Name' => $driver->Name,
+            'initials' => $driver->initials(),
+            'is_on_trip' => $onTripNiks->has($driver->NIK),
+            'ends_at' => $onTripNiks->has($driver->NIK)
+                                ? \Carbon\Carbon::parse($onTripNiks[$driver->NIK])->format('H:i')
+                                : null,
+        ]);
 
         // Recent driver bookings (latest 10)
         $recentDriverBookings = DriverBooking::query()

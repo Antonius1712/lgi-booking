@@ -54,8 +54,9 @@ class FortifyServiceProvider extends ServiceProvider
             $nik = $request->nik;
             $password = $request->password;
 
-            $user = User::query()->where('NIK', $nik)->first();
-            if (! $user) {
+            
+            $user = User::query()->where('NIK', $nik);
+            if (! $user->first()) {
                 throw ValidationException::withMessages([
                     'nik' => ['User not Found'],
                 ]);
@@ -63,9 +64,30 @@ class FortifyServiceProvider extends ServiceProvider
 
             $encryptedPassword = LgiPassword::Encrypt($password);
 
-            if ($user->Password !== $encryptedPassword) {
+            if ($user->first()->Password !== $encryptedPassword) {
                 throw ValidationException::withMessages([
                     'password' => ['Invalid password.'],
+                ]);
+            }
+
+            //! Validate Access Level
+            $user = $user->whereHas('UserGroup', function($query1){
+                $query1->whereHas('Group', function($query2){
+                    $query2->where('AppCode', 'lgi-booking');
+                    $query2->whereHas('App', function($query3){
+                        $query3->where('AppCode', 'lgi-booking');
+                    });
+                });
+            })
+            ->with('UserGroup')
+            ->with('UserGroup.Group')
+            ->with('UserGroup.Group.App')
+            ->first();
+
+            /* THROW ERROR IF DOESN'T HAVE ACCESS */
+            if( !$user ){
+                throw ValidationException::withMessages([
+                    "error" => "doesn't have access.",
                 ]);
             }
 

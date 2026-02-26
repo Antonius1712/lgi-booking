@@ -31,7 +31,8 @@
         'rowspan' => $rowspan,
         'end' => $end,
         'by' => $b->user->Name,
-        'description' => $b->description
+        'description' => $b->description,
+        'participants' => $b->guest_emails ?? [],
         ];
 
         // mark rows to skip
@@ -138,7 +139,9 @@
                                         data-d="{{ $day }}" data-t="{{ $range }}" data-sb="{{ $range }}"
                                         data-eb="{{ $booking['end'] }}" data-desc=@json($booking['description'])
                                         data-i="{{ $booking['id'] }}" data-nik_booking="{{ $booking['nik'] }}"
-                                        data-username_booking="{{ $booking['name'] }}" style="cursor: pointer;"
+                                        data-username_booking="{{ $booking['name'] }}"
+                                        data-participants="{{ json_encode($booking['participants']) }}"
+                                        style="cursor: pointer;"
                                     >
                                         <strong>BOOKED</strong><br>
                                         {{ $range }} – {{ $booking['end'] }} <br>
@@ -229,25 +232,14 @@
                         </div>
                     </div>
 
-                    {{-- <div class="form-group mt-2">
-                        <label for="participant">
-                            Participant
-                            <span data-bs-toggle="tooltip" data-bs-offset="0,6" data-bs-placement="top"
-                                data-bs-html="true"
-                                data-bs-original-title="&lt;i class='icon-base bx bx-info icon-xs' &gt;&lt;/i&gt; &lt;span&gt;Email yang ditambahkan akan menerima notifikasi undangan meeting ini.&lt;/span&gt;">
-                                (Optional)
-                            </span>
-                        </label>
-                        <div class="col-md-6 select2-primary">
-                            <label class="form-label" for="multicol-language">Language</label>
-                            <select id="multicol-language" class="select2 form-select" multiple>
-                                <option value="en" selected>English</option>
-                                <option value="fr" selected>French</option>
-                                <option value="de">German</option>
-                                <option value="pt">Portuguese</option>
-                            </select>
+                    <div class="form-group mt-2 participant-field-group">
+                        <label>Participants <small class="text-muted">(Optional)</small></label>
+                        <div class="participant-box" id="createParticipantBox">
+                            <input type="text" id="createParticipantSearch" class="participant-search-input" placeholder="Search by name..." autocomplete="off">
                         </div>
-                    </div> --}}
+                        <ul class="dropdown-menu w-100 participant-dropdown" id="createParticipantDropdown" style="max-height: 220px; overflow-y: auto;"></ul>
+                        <input type="hidden" name="participants_json" id="createParticipantsJson" value="[]">
+                    </div>
                 </div>
 
                 <div class="modal-footer">
@@ -307,9 +299,13 @@
                             class="form-control"></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="e_participant">Participant</label>
-                        <input type="text" name="e_participant" id="e_participant" class="form-control">
+                    <div class="form-group participant-field-group" id="editParticipantGroup">
+                        <label>Participants <small class="text-muted">(Optional)</small></label>
+                        <div class="participant-box" id="editParticipantBox">
+                            <input type="text" id="editParticipantSearch" class="participant-search-input" placeholder="Search by name..." autocomplete="off">
+                        </div>
+                        <ul class="dropdown-menu w-100 participant-dropdown" id="editParticipantDropdown" style="max-height: 220px; overflow-y: auto;"></ul>
+                        <input type="hidden" name="participants_json" id="editParticipantsJson" value="[]">
                     </div>
                 </div>
 
@@ -321,6 +317,56 @@
         </div>
     </div>
 </div>
+<style>
+    .participant-box {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 0.25rem 0.5rem;
+        min-height: 38px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        align-items: center;
+        background: #fff;
+        cursor: text;
+    }
+    .participant-box:focus-within {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .participant-chip {
+        display: inline-flex;
+        align-items: center;
+        background: #0d6efd;
+        color: #fff;
+        border-radius: 1rem;
+        padding: 2px 10px 2px 12px;
+        font-size: 0.8rem;
+        gap: 6px;
+        white-space: nowrap;
+        line-height: 1.6;
+    }
+    .participant-chip .chip-remove {
+        cursor: pointer;
+        font-size: 1.1rem;
+        line-height: 1;
+        opacity: 0.75;
+        flex-shrink: 0;
+    }
+    .participant-chip .chip-remove:hover { opacity: 1; }
+    .participant-search-input {
+        border: none;
+        outline: none;
+        flex: 1;
+        min-width: 130px;
+        font-size: 0.875rem;
+        background: transparent;
+        padding: 4px 2px;
+    }
+    .participant-field-group { position: relative; }
+    .participant-field-group .participant-dropdown { position: absolute; z-index: 1055; top: 100%; left: 0; }
+</style>
+
 @endsection
 @section('script')
 
@@ -383,6 +429,8 @@
             generateStartTimes(room_slug);
             $('#stime').val(time);
             generateEndTimes(time, dateStr, room_slug);
+
+            createPM.clear();
         });
 
         $('#EditBookingMeetingRoomModal').on('show.bs.modal', function (event) {
@@ -408,21 +456,25 @@
             $('#e_stime').attr('disabled', false);
             $('#e_etime').attr('disabled', false);
             $('#e_description').attr('disabled', false);
-            $('#e_participant').attr('disabled', false);
+            $('#editParticipantSearch').attr('disabled', false);
             modal.find('.modal-title').text('Edit Booking Room ' + room);
 
-            if( nik_booking !== nik_login ){
+            const isOwner = nik_booking === nik_login;
+            if (!isOwner) {
                 $('.modal-footer').hide();
                 $('#e_stime').attr('disabled', true);
                 $('#e_etime').attr('disabled', true);
                 $('#e_description').attr('disabled', true);
-                $('#e_participant').attr('disabled', true);
+                $('#editParticipantSearch').attr('disabled', true);
                 modal.find('.modal-title').text(`Booked By : ${username_booking}`);
             }
 
             $('#e_stime').val(start_booking);
             $('#e_etime').val(end_booking);
             $('#e_description').val(description);
+
+            const existingParticipants = button.data('participants') || [];
+            editPM.setParticipants(existingParticipants, !isOwner);
 
             let routeUpdate = @js(route('booking.meeting-room.update', '__ID__'));
             routeUpdate = routeUpdate.replace('__ID__', idBooking);
@@ -714,6 +766,130 @@
             const m = String(minutes % 60).padStart(2, '0');
             return `${h}:${m}`;
         }
+
+        // ── Participant tag manager ─────────────────────────────────────────────
+        const searchUserUrl = @js(route('services.search-user'));
+
+        function ParticipantManager(boxId, searchId, dropdownId, hiddenId) {
+            const self      = this;
+            self.list       = [];
+            let debounce    = null;
+            let readonly    = false;
+
+            const $box      = $('#' + boxId);
+            const $search   = $('#' + searchId);
+            const $dropdown = $('#' + dropdownId);
+            const $hidden   = $('#' + hiddenId);
+
+            $box.on('click', function () { $search.focus(); });
+
+            $search.on('input', function () {
+                if (readonly) return;
+                clearTimeout(debounce);
+                const q = $.trim($(this).val());
+                if (!q) { $dropdown.removeClass('show').empty(); return; }
+
+                debounce = setTimeout(function () {
+                    $.get(searchUserUrl, { keywords: q }, function (data) {
+                        const filtered = data.filter(u => !self.list.find(p => p.email === u.Email));
+                        $dropdown.empty();
+                        if (!filtered.length) {
+                            $dropdown.append('<li><span class="dropdown-item disabled text-muted">No results found</span></li>').addClass('show');
+                            return;
+                        }
+                        filtered.forEach(u => {
+                            $dropdown.append(
+                                `<li><a class="dropdown-item participant-option" href="#"
+                                    data-box="${boxId}" data-email="${u.Email}" data-name="${u.Name}">
+                                    ${u.Name}
+                                    <small class="text-muted ms-1">${u.Email}</small>
+                                </a></li>`
+                            );
+                        });
+                        $dropdown.addClass('show');
+                    });
+                }, 300);
+            });
+
+            $search.on('keydown', function (e) {
+                if (e.key === 'Backspace' && !$(this).val() && self.list.length && !readonly) {
+                    const last = self.list[self.list.length - 1];
+                    self.remove(last.email);
+                }
+            });
+
+            self.add = function (email, name) {
+                if (self.list.find(p => p.email === email)) return;
+                self.list.push({ email, name });
+                self.render();
+            };
+
+            self.remove = function (email) {
+                self.list = self.list.filter(p => p.email !== email);
+                self.render();
+            };
+
+            self.render = function () {
+                $box.find('.participant-chip').remove();
+                self.list.forEach(p => {
+                    $box.prepend(
+                        `<span class="participant-chip">
+                            ${p.email}
+                            ${!readonly ? `<span class="chip-remove" data-box="${boxId}" data-email="${p.email}">&times;</span>` : ''}
+                        </span>`
+                    );
+                });
+                $hidden.val(JSON.stringify(self.list));
+            };
+
+            self.setParticipants = function (list, isReadonly) {
+                readonly    = !!isReadonly;
+                self.list   = Array.isArray(list) ? list.map(item => ({ email: item.email || item.nik, name: item.name })) : [];
+                $search.prop('disabled', readonly);
+                self.render();
+            };
+
+            self.clear = function () {
+                readonly    = false;
+                self.list   = [];
+                $search.prop('disabled', false).val('');
+                $dropdown.removeClass('show').empty();
+                self.render();
+            };
+
+            return self;
+        }
+
+        const createPM = new ParticipantManager('createParticipantBox', 'createParticipantSearch', 'createParticipantDropdown', 'createParticipantsJson');
+        const editPM   = new ParticipantManager('editParticipantBox',   'editParticipantSearch',   'editParticipantDropdown',   'editParticipantsJson');
+
+        // Select a participant from the dropdown
+        $(document).on('click', '.participant-option', function (e) {
+            e.preventDefault();
+            const email   = $(this).data('email');
+            const name  = $(this).data('name');
+            const boxId = $(this).data('box');
+            const pm    = boxId === 'createParticipantBox' ? createPM : editPM;
+            const sid   = boxId === 'createParticipantBox' ? 'createParticipantSearch' : 'editParticipantSearch';
+            pm.add(email, name);
+            $(this).closest('.participant-dropdown').removeClass('show').empty();
+            $('#' + sid).val('');
+        });
+
+        // Remove a participant chip
+        $(document).on('click', '.chip-remove', function (e) {
+            e.stopPropagation();
+            const email = $(this).data('email');
+            const boxId = $(this).data('box');
+            (boxId === 'createParticipantBox' ? createPM : editPM).remove(email);
+        });
+
+        // Close dropdowns when clicking outside
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('.participant-box, .participant-dropdown').length) {
+                $('.participant-dropdown').removeClass('show').empty();
+            }
+        });
 
     });
 </script>
