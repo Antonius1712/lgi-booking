@@ -66,7 +66,7 @@ class BookingDriverController extends Controller
             ->where('scheduled_pickup_date', $date)
             ->where('status', '!=', 'cancelled')
             ->with(['user:NIK,Name', 'driver:NIK,Name'])
-            ->get();
+        ->get();
 
         // dd($booked);
         // $booked = [];

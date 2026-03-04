@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\MeetingRoomController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\BookingDriverController;
 use App\Http\Controllers\BookingMeetingController;
+use App\Http\Controllers\DriverTripController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MyBookingDriverController;
 use App\Http\Controllers\MyBookingMeetingRoomController;
@@ -89,6 +90,11 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('/driver', BookingDriverController::class)
             ->parameters(['driver' => 'driverBooking'])
             ->except(['edit', 'show', 'destroy']);
+    });
+
+    Route::prefix('driver/trips')->as('driver.trips.')->group(function () {
+        Route::patch('/{driverBooking}/remind', [DriverTripController::class, 'remind'])->name('remind');
+        Route::patch('/{driverBooking}/cancel', [DriverTripController::class, 'cancel'])->name('cancel');
     });
 
     Route::prefix('my-booking')->as('my-booking.')->group(function () {

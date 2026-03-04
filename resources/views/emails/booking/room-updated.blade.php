@@ -47,7 +47,7 @@
         <tr style="background-color:#fafafa;">
             <td style="padding:12px 16px; font-size:14px; color:#6c757d;">Peserta</td>
             <td style="padding:12px 16px; font-size:14px; color:#212529; font-weight:600;">
-                {{ implode(', ', $booking->guest_emails) }}
+                {{ implode(', ', collect($booking->guest_emails)->pluck('email')->all()) }}
             </td>
         </tr>
         @endif

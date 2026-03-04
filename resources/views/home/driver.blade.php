@@ -3,7 +3,7 @@
 @section('content')
 
 {{-- ── DRIVER BANNER ── --}}
-<div class="welcome-banner welcome-banner-driver mb-4">
+<div class="bg-primary p-8 text-white mb-4" style="border-radius: 14px;">
     <div style="position:relative;z-index:1">
         <p class="welcome-title">
             Good {{ now()->format('G') < 12 ? 'Morning' : (now()->format('G') < 17 ? 'Afternoon' : 'Evening' ) }}, {{
@@ -54,7 +54,7 @@
                     <div class="ms-auto text-end">
                         <div style="font-size:.72rem;color:#82868b">Phone</div>
                         <div style="font-size:.82rem;font-weight:600;color:#2c2c5e">
-                            {{ $activeTrip->user->NoTelp }}
+                            <a href="tel:{{ $activeTrip->user->NoTelp }}">{{ $activeTrip->user->NoTelp }}</a>
                         </div>
                     </div>
                     @endif
@@ -118,8 +118,8 @@
         @if ($upcomingTrips->isNotEmpty())
         <p class="home-section-title">Upcoming Today</p>
         @foreach ($upcomingTrips as $trip)
-        <div class="card mb-3 home-trip-card">
-            <div class="home-trip-strip home-strip-upcoming"></div>
+        <div class="card mb-3 home-trip-now">
+            <div class="home-trip-strip home-strip-now"></div>
             <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                     <span class="home-trip-id">{{ $trip->booking_number }}</span>
@@ -135,7 +135,9 @@
                     @if ($trip->user?->NoTelp)
                     <div class="ms-auto text-end">
                         <div style="font-size:.72rem;color:#82868b">Phone</div>
-                        <div style="font-size:.82rem;font-weight:600;color:#2c2c5e">{{ $trip->user->NoTelp }}</div>
+                        <div style="font-size:.82rem;font-weight:600;color:#2c2c5e">
+                            <a href="tel:{{ $trip->user->NoTelp }}">{{ $trip->user->NoTelp }}</a>
+                        </div>
                     </div>
                     @endif
                 </div>
@@ -181,18 +183,34 @@
                     : $startsIn.'m' }}
                 </span>
 
-                {{-- TODO: Need to validate this button, can cancel if already send reminder 3 times. DriverBooking->reminder_count >= 3 --}}
-                <a href=""
-                    target="_blank" class="btn btn-outline-danger">
-                    <i class="icon-base bx bx-x-circle me-1"></i> Cancel Booking
-                </a>
+                @if ($trip->reminder_count >= 3)
+                    <form method="POST" action="{{ route('driver.trips.cancel', $trip) }}"
+                        onsubmit="return confirm('Yakin ingin membatalkan booking ini?')">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="icon-base bx bx-x-circle me-1"></i> Cancel Booking
+                        </button>
+                    </form>
+                @endif
 
-                {{-- TODO: Need to send reminder email notification to the booker. --}}
-                {{-- TODO: Need to update reminder_count in DriverBooking model --}}
-                <a href=""
-                    target="_blank" class="btn btn-outline-info">
-                    <i class="icon-base bx bx-alarm me-1"></i> Remind Booker
-                </a>
+                @if ($trip->reminder_count < 3)
+                    <form method="POST" action="{{ route('driver.trips.remind', $trip) }}">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn btn-outline-info">
+                            <i class="icon-base bx bx-alarm me-1"></i>
+                            Remind Booker
+                            @if ($trip->reminder_count > 0)
+                                ({{ $trip->reminder_count }}/3)
+                            @endif
+                        </button>
+                    </form>
+                @else
+                    <button type="button" class="btn btn-outline-secondary" disabled>
+                        <i class="icon-base bx bx-alarm me-1"></i> Reminded (3/3)
+                    </button>
+                @endif
 
                 <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($trip->destination) }}"
                     target="_blank" class="btn btn-outline-success">

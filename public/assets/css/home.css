@@ -38,8 +38,8 @@
     width: 160px; height: 160px; border-radius: 50%;
     background: rgba(255,255,255,.05);
 }
-.welcome-banner-driver { background: linear-gradient(135deg, #28c76f 0%, #48da89 100%); }
-.welcome-banner-admin  { background: linear-gradient(135deg, #2c2c5e 0%, #7367f0 100%); }
+/* .welcome-banner-driver { background: linear-gradient(135deg, #28c76f 0%, #48da89 100%); }
+.welcome-banner-admin  { background: linear-gradient(135deg, #2c2c5e 0%, #7367f0 100%); } */
 .welcome-title  { font-size: 1.35rem; font-weight: 700; margin: 0 0 4px; }
 .welcome-sub    { font-size: .85rem; opacity: .85; margin: 0; }
 .welcome-date   { font-size: .82rem; opacity: .75; margin-top: 6px; margin-bottom: 0; }
@@ -215,9 +215,9 @@
     grid-column: 1 / -1;
     background: rgba(115,103,240,.06); border-radius: 8px;
     padding: .6rem .85rem; display: flex; align-items: flex-start; gap: .6rem;
-    border-left: 3px solid #7367f0;
+    border-left: 3px solid #ff9f43;
 }
-.home-dest-full .icon-base { color: #7367f0; margin-top: 2px; }
+.home-dest-full .icon-base { color: #ff9f43; margin-top: 2px; }
 .home-dest-full .home-detail-value { color: #2c2c5e; font-weight: 600; }
 
 .home-trip-card-footer {
@@ -358,3 +358,74 @@
 
 /* Activity label: prevent long words from overflowing */
 .home-act-label { word-break: break-word; }
+
+/* ── DRIVER: BOOKER ROW ── */
+/* Name/NIK container fills remaining space and can shrink */
+.home-booker-row > div:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+}
+/* Truncate long names on desktop where phone section competes for space */
+.home-booker-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* On mobile: phone wraps to its own row — full name visible */
+@media(max-width: 576px) {
+    .home-booker-row {
+        flex-wrap: wrap;
+    }
+    /* Full name, no truncation on mobile */
+    .home-booker-name {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+    }
+    /* Phone section drops below, left-aligned */
+    .home-booker-row > .ms-auto {
+        flex: 0 0 100%;
+        margin-left: 0 !important;
+        text-align: left !important;
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        padding-top: .5rem;
+        margin-top: .1rem;
+        border-top: 1px solid rgba(0,0,0,.06);
+    }
+    /* "Phone" label and number sit inline */
+    .home-booker-row > .ms-auto > div:last-child {
+        font-size: .82rem !important;
+        font-weight: 600;
+        color: #2c2c5e !important;
+    }
+}
+
+/* ── DRIVER: TRIP CARD FOOTER (mobile) ── */
+@media(max-width: 576px) {
+    .home-trip-card-footer {
+        flex-wrap: wrap;
+        gap: .5rem;
+        justify-content: flex-start;
+    }
+    /* Countdown / "starts in" text takes its own full row */
+    .home-trip-card-footer > span {
+        flex: 0 0 100%;
+    }
+    /* Forms (cancel/remind) and direct link stretch to share the button row */
+    .home-trip-card-footer > form {
+        flex: 1 1 auto;
+        display: flex;
+    }
+    .home-trip-card-footer > form .btn {
+        flex: 1;
+        justify-content: center;
+    }
+    .home-trip-card-footer > .btn,
+    .home-trip-card-footer > .home-btn-nav {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+}
