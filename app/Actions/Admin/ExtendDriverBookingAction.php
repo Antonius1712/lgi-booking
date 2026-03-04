@@ -58,6 +58,7 @@ class ExtendDriverBookingAction
                     'scheduled_end_time' => $newEnd->format('H:i:s'),
                     'scheduled_duration' => $driverBooking->scheduled_duration + ($hours * 60),
                     'status' => DriverBookingStatusEnum::EXTENDING->value,
+                    'extension_approved_by' => auth()->user()->NIK,
                     'extension_approved_at' => now(),
                 ]);
 

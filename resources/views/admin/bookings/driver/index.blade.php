@@ -236,14 +236,15 @@
 
                                 {{-- Confirm --}}
                                 @if ($canConfirm)
-                                    <form action="{{ route('admin.driver-bookings.confirm', $booking) }}"
-                                          method="POST">
-                                        @csrf @method('PATCH')
-                                        <button type="submit" class="adm-act-btn adm-act-green"
-                                                title="Confirm Departure">
-                                            <i class="icon-base bx bx-check"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button" class="adm-act-btn adm-act-green"
+                                            title="Confirm Departure"
+                                            onclick="openConfirm(
+                                                {{ $booking->id }},
+                                                '{{ $booking->booking_number }}',
+                                                '{{ $booking->driver?->Name }}'
+                                            )">
+                                        <i class="icon-base bx bx-check"></i>
+                                    </button>
                                 @endif
 
                                 {{-- Change Driver --}}
@@ -255,7 +256,9 @@
                                                 '{{ $booking->booking_number }}',
                                                 '{{ $booking->scheduled_pickup_date?->toDateString() }}',
                                                 '{{ $booking->scheduled_pickup_time?->format('H:i') }}',
-                                                '{{ $booking->scheduled_end_time?->format('H:i') }}'
+                                                '{{ $booking->scheduled_end_time?->format('H:i') }}',
+                                                '{{ $booking->driver?->NIK }}',
+                                                '{{ addslashes($booking->driver?->Name ?? '') }}'
                                             )">
                                         <i class="icon-base bx bx-transfer"></i>
                                     </button>
@@ -323,6 +326,34 @@
     </div>
 </div>
 
+{{-- ── CONFIRM MODAL ── --}}
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-semibold">Confirm Departure</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="confirm-form" method="POST">
+                @csrf @method('PATCH')
+                <div class="modal-body">
+                    <p style="font-size:.85rem;color:#5e5873;margin-bottom:0">
+                        Confirm departure for booking <strong id="confirm-booking-no"></strong>?<br>
+                        Driver <strong id="confirm-driver-name"></strong> will be notified via email.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="icon-base bx bx-check me-1"></i>Confirm Departure
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {{-- ── CHANGE DRIVER MODAL ── --}}
 <div class="modal fade" id="changeDriverModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -346,12 +377,57 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary btn-sm"
                             data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary btn-sm" id="change-driver-submit"
-                            disabled>
+                    <button type="button" class="btn btn-primary btn-sm" id="change-driver-submit"
+                            disabled onclick="openChangeDriverConfirm()">
                         <i class="icon-base bx bx-transfer me-1"></i>Change Driver
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+{{-- ── CHANGE DRIVER CONFIRM MODAL ── --}}
+<div class="modal fade" id="changeDriverConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:36px;height:36px;border-radius:50%;background:rgba(0,207,232,.12);
+                                 display:flex;align-items:center;justify-content:center">
+                        <i class="icon-base bx bx-transfer" style="color:#00cfe8;font-size:1.1rem"></i>
+                    </span>
+                    <h6 class="modal-title mb-0 fw-semibold" style="color:#2c2c5e">Confirm Driver Change</h6>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="text-muted mb-3" style="font-size:.88rem">
+                    You are about to assign a new driver to this booking.
+                </p>
+                <div class="rounded-2 p-3 mb-0" style="background:#f8f9fa;font-size:.85rem">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Current Driver</span>
+                        <strong id="cd-confirm-current"></strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">New Driver</span>
+                        <strong id="cd-confirm-new" style="color:#00cfe8"></strong>
+                    </div>
+                </div>
+                <p class="mt-3 mb-0 text-muted" style="font-size:.82rem">
+                    Both the employee and the new driver will be notified via email.
+                </p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-label-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm px-3 py-2"
+                        style="background:#00cfe8;color:#fff;border:none"
+                        onclick="$('#change-driver-form').submit()">
+                    <i class="icon-base bx bx-transfer me-1"></i>Apply Driver Change
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -378,21 +454,38 @@
 }
 .drv-select-card:hover:not(.drv-busy) { border-color: #7367f0; background: #f1f0ff; }
 .drv-select-card.selected { border-color: #7367f0; background: #f1f0ff; }
-.drv-select-card.drv-busy { opacity: .5; cursor: not-allowed; background: #f8f7fa; }
+.drv-select-card.drv-busy    { opacity: .5; cursor: not-allowed; background: #f8f7fa; }
+.drv-select-card.drv-current { border-color: #7367f0; }
 </style>
 
 <script>
+// ── Confirm modal ─────────────────────────────────────────────────────
+function openConfirm(id, bookingNo, driverName) {
+    const confirmUrl = @json(route('admin.driver-bookings.confirm', '__ID__'));
+    $('#confirm-booking-no').text(bookingNo);
+    $('#confirm-driver-name').text(driverName);
+    $('#confirm-form').attr('action', confirmUrl.replace('__ID__', id));
+    $('#confirmModal').modal('show');
+}
+
 // ── Cancel modal ──────────────────────────────────────────────────────
 function openCancel(id, bookingNo) {
     const cancelUrl = @json(route('admin.driver-bookings.cancel', '__ID__'));
-    cancelUrl = cancelUrl.replace('__ID__', id);
     $('#cancel-booking-no').text(bookingNo);
-    $('#cancel-form').attr('action', cancelUrl);
+    $('#cancel-form').attr('action', cancelUrl.replace('__ID__', id));
     $('#cancelModal').modal('show');
 }
 
 // ── Change driver modal ───────────────────────────────────────────────
-function openChangeDriver(id, bookingNo, date, timeStart, timeEnd) {
+var _currentDriverNik  = '';
+var _currentDriverName = '';
+var _selectedDriverName = '';
+
+function openChangeDriver(id, bookingNo, date, timeStart, timeEnd, currentDriverNik, currentDriverName) {
+    _currentDriverNik  = currentDriverNik;
+    _currentDriverName = currentDriverName;
+    _selectedDriverName = '';
+
     $('#change-driver-desc').html(
         'Booking <strong>' + bookingNo + '</strong> · ' + date + ' · ' + timeStart + '–' + timeEnd
     );
@@ -411,14 +504,18 @@ function openChangeDriver(id, bookingNo, date, timeStart, timeEnd) {
     }, function (drivers) {
         var $list = $('#driver-list').empty();
         $.each(drivers, function (i, d) {
-            var bgColor  = d.busy ? 'rgba(234,84,85,.1)'   : 'rgba(115,103,240,.1)';
-            var txtColor = d.busy ? '#ea5455'               : '#7367f0';
-            var avColor  = d.busy ? '#ea5455'               : '#28c76f';
+            var isCurrent = d.NIK === currentDriverNik;
+            var bgColor   = d.busy ? 'rgba(234,84,85,.1)'  : 'rgba(115,103,240,.1)';
+            var txtColor  = d.busy ? '#ea5455'              : '#7367f0';
+            var avColor   = d.busy ? '#ea5455'              : '#28c76f';
             var statusTxt = d.busy ? '● Busy this slot'    : '● Available';
+            var currentBadge = isCurrent
+                ? '<div style="font-size:.68rem;color:#7367f0;font-weight:600">Current</div>'
+                : '';
 
-            var $col = $('<div class="col-sm-6"></div>');
+            var $col  = $('<div class="col-sm-6"></div>');
             var $card = $(
-                '<div class="drv-select-card' + (d.busy ? ' drv-busy' : '') + '" data-nik="' + d.NIK + '">' +
+                '<div class="drv-select-card' + (d.busy ? ' drv-busy' : '') + (isCurrent ? ' drv-current' : '') + '" data-nik="' + d.NIK + '">' +
                     '<div style="width:36px;height:36px;border-radius:50%;background:' + bgColor + ';color:' + txtColor + ';' +
                          'display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0">' +
                         d.initials +
@@ -426,12 +523,13 @@ function openChangeDriver(id, bookingNo, date, timeStart, timeEnd) {
                     '<div style="flex:1;min-width:0">' +
                         '<div style="font-size:.85rem;font-weight:600;color:#2c2c5e">' + d.Name + '</div>' +
                         '<div style="font-size:.75rem;color:' + avColor + '">' + statusTxt + '</div>' +
+                        currentBadge +
                     '</div>' +
                 '</div>'
             );
 
             if (!d.busy) {
-                $card.on('click', function () { selectDriver(d.NIK, this); });
+                $card.on('click', function () { selectDriver(d.NIK, d.Name, this); });
             }
 
             $col.append($card);
@@ -442,11 +540,22 @@ function openChangeDriver(id, bookingNo, date, timeStart, timeEnd) {
     $('#changeDriverModal').modal('show');
 }
 
-function selectDriver(nik, el) {
+function selectDriver(nik, name, el) {
     $('.drv-select-card').removeClass('selected');
     $(el).addClass('selected');
     $('#selected-driver-nik').val(nik);
+    _selectedDriverName = name;
     $('#change-driver-submit').prop('disabled', false);
+}
+
+function openChangeDriverConfirm() {
+    $('#cd-confirm-current').text(_currentDriverName || '-');
+    $('#cd-confirm-new').text(_selectedDriverName || 'Unknown');
+    var cdModal = bootstrap.Modal.getInstance(document.getElementById('changeDriverModal'));
+    if (cdModal) { cdModal.hide(); }
+    setTimeout(function () {
+        new bootstrap.Modal(document.getElementById('changeDriverConfirmModal')).show();
+    }, 400);
 }
 </script>
 

@@ -30,9 +30,11 @@
                     'name' => $book->user->Name,
                     'rowspan' => $rowspan,
                     'scheduled_pickup_time' => $start,
+                    'original_pickup_time' => $start,
                     'scheduled_end_time' => $end,
                     'purpose_of_trip' => $book->purpose_of_trip,
-                    'destination' => $book->destination
+                    'destination' => $book->destination,
+                    'status' => $book->status,
                 ];
 
                 // dd($bookedMap);
@@ -136,9 +138,17 @@
                                 @endif
 
                                 @if (!empty($bookedMap[$driverSlug][$range]))
-                                    @php $booking = $bookedMap[$driverSlug][$range]; @endphp
+                                    @php
+                                        $booking = $bookedMap[$driverSlug][$range];
+                                        $bookingStatus = $booking['status'] ?? 'booked';
+                                        [$cellBg, $cellLabel] = match(true) {
+                                            $bookingStatus === 'completed'                          => ['bg-secondary', 'SELESAI'],
+                                            in_array($bookingStatus, ['departure', 'extending'])    => ['bg-success',   'ON TRIP'],
+                                            default                                                 => ['bg-primary',   'BOOKED'],
+                                        };
+                                    @endphp
 
-                                    <td class="text-center align-middle text-white booked-cell bg-primary"
+                                    <td class="text-center align-middle text-white booked-cell {{ $cellBg }}"
                                         rowspan="{{ $booking['rowspan'] }}" data-bs-toggle="modal"
                                         data-bs-target="#EditDriverBookingModal"
                                         data-driver_nik="{{ $driver->NIK }}"
@@ -156,8 +166,10 @@
                                         data-user_nik="{{ $booking['user_nik'] }}"
                                         data-name="{{ $booking['name'] }}"
                                         data-destination="{{ $booking['destination'] }}"
+                                        data-status="{{ $booking['status'] }}"
+                                        data-original_pickup_time="{{ $booking['original_pickup_time'] }}"
                                     >
-                                        <strong>BOOKED</strong><br>
+                                        <strong>{{ $cellLabel }}</strong><br>
                                         {{ $booking['scheduled_pickup_time'] }} – {{ $booking['scheduled_end_time'] }} <br>
                                         {{ $booking['name'] }} <br>
                                         {{ $booking['purpose_of_trip'] }}
@@ -480,7 +492,7 @@
     });
 
     $('#EditDriverBookingModal').on('show.bs.modal', function (event) {
-        const button                    = $(event.relatedTarget); // clicked div
+        const button                    = $(event.relatedTarget);
         const modal                     = $(this);
         const driver_nik                = button.data('driver_nik');
         const driver_name               = button.data('driver_name');
@@ -488,7 +500,6 @@
         const year                      = button.data('year');
         const month                     = button.data('month');
         const day                       = button.data('day');
-        const dateStr                   = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         const selected_time_range       = button.data('time_range');
         const scheduled_pickup_time     = button.data('scheduled_pickup_time');
         const scheduled_end_time        = button.data('scheduled_end_time');
@@ -496,27 +507,26 @@
         const booking_id                = button.data('booking_id');
         const user_nik                  = button.data('user_nik');
         const name                      = button.data('name');
-        const nik_login                 = parseInt(@js(auth()->user()->NIK));
+        const booking_status            = button.data('status');
+        const original_pickup_time      = button.data('original_pickup_time');
+        const nik_login                 = @js(auth()->user()->NIK);
         const destination               = button.data('destination');
 
-        $('.modal-footer').show();
-        $('#edit_stime').attr('disabled', false);
-        $('#edit_etime').attr('disabled', false);
-        $('#edit_destination').attr('disabled', false);
-        $('#edit_purpose_of_trip').attr('disabled', false);
-        modal.find('.modal-title').text('Edit Booking Driver ' + slug);
+        const editableStatuses = ['booked', 'waiting_confirmation', 'reminder_sent_1', 'reminder_sent_2', 'reminder_sent_3'];
+        const isOwner    = String(user_nik) === String(nik_login);
+        const isEditable = isOwner && editableStatuses.includes(booking_status);
 
-        if( user_nik !== nik_login ){
-            $('.modal-footer').hide();
-            $('#edit_stime').attr('disabled', true);
-            $('#edit_etime').attr('disabled', true);
-            $('#edit_destination').attr('disabled', true);
-            $('#edit_purpose_of_trip').attr('disabled', true);
-            modal.find('.modal-title').text(`Booked By : ${name}`);
+        // Reset state
+        $('.modal-footer-button-cancel, .modal-footer-button-save').show();
+        $('#edit_stime, #edit_etime, #edit_destination, #edit_purpose_of_trip').prop('disabled', false);
+        modal.find('.modal-title').text('Edit Booking Driver ' + driver_name);
+
+        if (!isEditable) {
+            $('.modal-footer-button-cancel, .modal-footer-button-save').hide();
+            $('#edit_stime, #edit_etime, #edit_destination, #edit_purpose_of_trip').prop('disabled', true);
+            modal.find('.modal-title').text(`Detail Booking — ${name}`);
         }
 
-        $('#edit_stime').val(scheduled_pickup_time);
-        $('#edit_etime').val(scheduled_end_time);
         $('#edit_description').val(purpose_of_trip);
 
         let routeUpdate = @js(route('booking.driver.update', '__ID__'));
@@ -526,7 +536,6 @@
         cancelRoute = cancelRoute.replace('__ID__', booking_id);
         document.getElementById('formCancelAction').action = cancelRoute;
 
-        // Change modal title
         modal.find('#formEditAction').attr('action', routeUpdate);
         modal.find('.edit_driver_name').val(driver_name);
         modal.find('.edit_driver_slug').val(slug);
@@ -539,15 +548,15 @@
         modal.find('#edit_destination').val(destination);
         modal.find('#edit_purpose_of_trip').html(purpose_of_trip);
 
-        generateStartTimes(slug, booking_id);
-        // generateStartTimes(time_range, dateStr, slug, booking_id, driver_nik);
-        $('#edit_stime').val(selected_time_range);
-        generateEndTimes(selected_time_range, slug, booking_id)
-        // generateEndTimes(time_range, dateStr, slug, booking_id, driver_nik);
-        $('#edit_etime').val(scheduled_end_time);
-
-
-        // TODO: Harusnya yang bukan punya sendiri, tidak bisa edit.
+        if (isEditable) {
+            generateStartTimes(slug, booking_id);
+            $('#edit_stime').val(selected_time_range);
+            generateEndTimes(selected_time_range, slug, booking_id);
+            $('#edit_etime').val(scheduled_end_time);
+        } else {
+            $('#edit_stime').html(`<option value="${original_pickup_time}">${original_pickup_time}</option>`);
+            $('#edit_etime').html(`<option value="${scheduled_end_time}">${scheduled_end_time}</option>`);
+        }
     });
 
     $('body').on('keyup', '#destination', function(){

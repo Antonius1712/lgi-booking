@@ -41,6 +41,7 @@ class DriverBooking extends Model
 
         'extention_requested_at',
         'extension_duration',
+        'extension_request_reason',
 
         'extension_approved_by',
         'extension_approved_at',

@@ -213,13 +213,14 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                         Mark this booking as departed. The actual pickup time will be recorded as <strong>now</strong>,
                         and the employee will receive a confirmation email.
                     </p>
-                    <form action="{{ route('admin.driver-bookings.confirm', $driverBooking) }}" method="POST">
+                    <form action="{{ route('admin.driver-bookings.confirm', $driverBooking) }}" method="POST"
+                          id="form-depart">
                         @csrf @method('PATCH')
-                        <button type="submit" class="btn btn-success btn-sm"
-                                onclick="return confirm('Confirm departure for {{ $driverBooking->booking_number }}?')">
-                            <i class="icon-base bx bx-check me-1"></i>Confirm Departure Now
-                        </button>
                     </form>
+                    <button type="button" class="btn btn-success btn-sm"
+                            data-bs-toggle="modal" data-bs-target="#modal-depart">
+                        <i class="icon-base bx bx-check me-1"></i>Confirm Departure Now
+                    </button>
                 </div>
             </div>
         @endif
@@ -258,22 +259,25 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                         <strong>{{ $driverBooking->scheduled_end_time?->format('H:i') }} WIB</strong>.
                         Select how many hours to add:
                     </p>
-                    <form action="{{ route('admin.driver-bookings.extend', $driverBooking) }}" method="POST">
+                    <form action="{{ route('admin.driver-bookings.extend', $driverBooking) }}" method="POST"
+                          id="form-extend">
                         @csrf @method('PATCH')
-                        <div class="d-flex gap-2 flex-wrap">
-                            @foreach (range(1, $maxExtensionHours) as $h)
-                                @php
-                                    $newEnd = $driverBooking->scheduled_end_time?->copy()->addHours($h)->format('H:i');
-                                @endphp
-                                <button type="submit" name="extend_hours" value="{{ $h }}"
-                                        class="bkd-extend-btn"
-                                        onclick="return confirm('Extend trip by {{ $h }}h? New end: {{ $newEnd }} WIB')">
-                                    <span class="bkd-extend-delta">+{{ $h }}h</span>
-                                    <span class="bkd-extend-time">→ {{ $newEnd }}</span>
-                                </button>
-                            @endforeach
-                        </div>
+                        <input type="hidden" name="extend_hours" id="extend-hours-input">
                     </form>
+                    <div class="d-flex gap-2 flex-wrap">
+                        @foreach (range(1, $maxExtensionHours) as $h)
+                            @php
+                                $newEnd = $driverBooking->scheduled_end_time?->copy()->addHours($h)->format('H:i');
+                            @endphp
+                            <button type="button"
+                                    class="bkd-extend-btn btn-open-extend"
+                                    data-hours="{{ $h }}"
+                                    data-new-end="{{ $newEnd }}">
+                                <span class="bkd-extend-delta">+{{ $h }}h</span>
+                                <span class="bkd-extend-time">→ {{ $newEnd }}</span>
+                            </button>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         @endif
@@ -295,20 +299,24 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                         Current driver: <strong>{{ $driverBooking->driver?->Name }}</strong>.
                         Select a replacement:
                     </p>
-                    <form action="{{ route('admin.driver-bookings.change-driver', $driverBooking) }}" method="POST">
+                    <form action="{{ route('admin.driver-bookings.change-driver', $driverBooking) }}" method="POST"
+                          id="form-change-driver">
                         @csrf @method('PATCH')
                         <div class="row g-2 mb-3" id="driver-grid">
                             @foreach ($drivers as $d)
                                 @php
                                     $isCurrent = $d->NIK === $driverBooking->driver_nik;
+                                    $isBusy    = ! $isCurrent && in_array($d->NIK, $busyDriverNiks);
                                 @endphp
                                 <div class="col-sm-6 col-lg-4">
-                                    <label class="bkd-driver-card {{ $isCurrent ? 'bkd-driver-current' : '' }}">
+                                    <label class="bkd-driver-card {{ $isCurrent ? 'bkd-driver-current' : '' }} {{ $isBusy ? 'bkd-driver-busy' : '' }}">
                                         <input type="radio" name="driver_nik" value="{{ $d->NIK }}"
                                                class="d-none"
-                                               {{ $isCurrent ? 'checked' : '' }}>
+                                               data-name="{{ $d->Name }}"
+                                               {{ $isCurrent ? 'checked' : '' }}
+                                               {{ $isBusy ? 'disabled' : '' }}>
                                         <div class="bkd-avatar bkd-av-sm"
-                                             style="--av-bg:rgba(40,199,111,.12);--av-color:#28c76f">
+                                             style="--av-bg:{{ $isBusy ? 'rgba(234,84,85,.1)' : 'rgba(40,199,111,.12)' }};--av-color:{{ $isBusy ? '#ea5455' : '#28c76f' }}">
                                             {{ $d->initials() }}
                                         </div>
                                         <div style="min-width:0">
@@ -320,15 +328,18 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                                                 <div style="font-size:.68rem;color:#7367f0;font-weight:600">
                                                     Current
                                                 </div>
+                                            @elseif ($isBusy)
+                                                <div style="font-size:.68rem;color:#ea5455;font-weight:600">
+                                                    Busy this slot
+                                                </div>
                                             @endif
                                         </div>
                                     </label>
                                 </div>
                             @endforeach
                         </div>
-                        <button type="submit" class="btn btn-sm"
-                                style="background:#00cfe8;color:#fff;border:none"
-                                onclick="return confirm('Change driver for this booking?')">
+                        <button type="button" class="btn btn-sm" id="btn-change-driver"
+                                style="background:#00cfe8;color:#fff;border:none">
                             <i class="icon-base bx bx-transfer me-1"></i>Apply Driver Change
                         </button>
                     </form>
@@ -357,30 +368,33 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                         </strong>.
                         Driver availability will be checked against the new slot.
                     </p>
-                    <form action="{{ route('admin.driver-bookings.reschedule', $driverBooking) }}" method="POST">
+                    <form action="{{ route('admin.driver-bookings.reschedule', $driverBooking) }}" method="POST"
+                          id="form-reschedule">
                         @csrf @method('PATCH')
                         <div class="row g-3 mb-3">
                             <div class="col-12">
                                 <label class="form-label fw-semibold" style="font-size:.8rem">New Date</label>
-                                <input type="date" name="pickup_date" class="form-control form-control-sm"
+                                <input type="date" name="pickup_date" id="input-reschedule-date"
+                                       class="form-control form-control-sm"
                                        value="{{ old('pickup_date', $driverBooking->scheduled_pickup_date?->format('Y-m-d')) }}"
                                        min="{{ now()->toDateString() }}" required>
                             </div>
                             <div class="col-6">
                                 <label class="form-label fw-semibold" style="font-size:.8rem">Pickup Time</label>
-                                <input type="time" name="pickup_time" class="form-control form-control-sm"
+                                <input type="time" name="pickup_time" id="input-reschedule-pickup"
+                                       class="form-control form-control-sm"
                                        value="{{ old('pickup_time', $driverBooking->scheduled_pickup_time?->format('H:i')) }}"
                                        required>
                             </div>
                             <div class="col-6">
                                 <label class="form-label fw-semibold" style="font-size:.8rem">End Time</label>
-                                <input type="time" name="end_time" class="form-control form-control-sm"
+                                <input type="time" name="end_time" id="input-reschedule-end"
+                                       class="form-control form-control-sm"
                                        value="{{ old('end_time', $driverBooking->scheduled_end_time?->format('H:i')) }}"
                                        required>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm"
-                                onclick="return confirm('Reschedule this booking? The driver will be notified.')">
+                        <button type="button" class="btn btn-primary btn-sm" id="btn-reschedule">
                             <i class="icon-base bx bx-calendar-edit me-1"></i>Apply Reschedule
                         </button>
                     </form>
@@ -408,14 +422,14 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                         <strong class="text-danger">This action cannot be undone.</strong>
                     </p>
                     <form action="{{ route('admin.driver-bookings.force-complete', $driverBooking) }}" method="POST"
-                          id="forceCompleteForm">
+                          id="form-force-complete">
                         @csrf @method('PATCH')
-                        <button type="button" class="btn btn-sm"
-                                style="background:#00cfe8;color:#fff;border:none"
-                                onclick="confirmForceComplete()">
-                            <i class="icon-base bx bx-check-double me-1"></i>Force Finish Now
-                        </button>
                     </form>
+                    <button type="button" class="btn btn-sm"
+                            style="background:#00cfe8;color:#fff;border:none"
+                            data-bs-toggle="modal" data-bs-target="#modal-force-complete">
+                        <i class="icon-base bx bx-check-double me-1"></i>Force Finish Now
+                    </button>
                 </div>
             </div>
         @endif
@@ -436,19 +450,10 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                     <p class="small mb-3 text-muted">
                         This will notify the employee via email. Please provide a reason.
                     </p>
-
-                    <form action="{{ route('admin.driver-bookings.cancel', $driverBooking) }}" method="POST">
-                        @csrf @method('PATCH')
-                        <div class="mb-3">
-                            <textarea name="cancelation_reason" class="form-control form-control-sm"
-                                      rows="3" placeholder="Reason for cancellation..." required
-                                      style="font-size:.83rem">{{ old('cancelation_reason') }}</textarea>
-                        </div>
-                        <button type="submit" class="btn btn-danger btn-sm"
-                                onclick="return confirm('Cancel this booking? This cannot be undone.')">
-                            <i class="icon-base bx bx-x me-1"></i>Cancel Booking
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-danger btn-sm"
+                            data-bs-toggle="modal" data-bs-target="#modal-cancel">
+                        <i class="icon-base bx bx-x me-1"></i>Cancel Booking
+                    </button>
                 </div>
             </div>
         @endif
@@ -533,6 +538,294 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
 
 </div>
 
+{{-- ══════════════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════════════ --}}
+
+{{-- ── Modal: Confirm Departure ── --}}
+<div class="modal fade" id="modal-depart" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:36px;height:36px;border-radius:50%;background:rgba(40,199,111,.12);
+                                 display:flex;align-items:center;justify-content:center">
+                        <i class="icon-base bx bx-check-circle" style="color:#28c76f;font-size:1.1rem"></i>
+                    </span>
+                    <h5 class="modal-title mb-0 fw-semibold" style="color:#2c2c5e">Confirm Departure</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="text-muted mb-3" style="font-size:.88rem">
+                    You are about to confirm the departure for:
+                </p>
+                <div class="rounded-2 p-3 mb-0" style="background:#f8f9fa;font-size:.85rem">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Booking</span>
+                        <strong>{{ $driverBooking->booking_number }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Employee</span>
+                        <strong>{{ $driverBooking->user?->Name }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Driver</span>
+                        <strong>{{ $driverBooking->driver?->Name }}</strong>
+                    </div>
+                </div>
+                <p class="mt-3 mb-0 text-muted" style="font-size:.82rem">
+                    Actual pickup time will be recorded as <strong>now</strong>.
+                    A confirmation email will be sent to the employee.
+                </p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success"
+                        onclick="$('#form-depart').submit()">
+                    <i class="icon-base bx bx-check me-1"></i>Confirm Departure
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ── Modal: Extend Duration ── --}}
+<div class="modal fade" id="modal-extend" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:36px;height:36px;border-radius:50%;background:rgba(255,159,67,.12);
+                                 display:flex;align-items:center;justify-content:center">
+                        <i class="icon-base bx bx-time-five" style="color:#ff9f43;font-size:1.1rem"></i>
+                    </span>
+                    <h5 class="modal-title mb-0 fw-semibold" style="color:#2c2c5e">Extend Trip Duration</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="text-muted mb-3" style="font-size:.88rem">
+                    You are about to extend the trip by <strong id="modal-extend-hours" style="color:#ff9f43"></strong>.
+                </p>
+                <div class="rounded-2 p-3 mb-0" style="background:#f8f9fa;font-size:.85rem">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Current End Time</span>
+                        <strong>{{ $driverBooking->scheduled_end_time?->format('H:i') }} WIB</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">New End Time</span>
+                        <strong id="modal-extend-new-end" style="color:#28c76f"></strong>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning"
+                        onclick="$('#form-extend').submit()">
+                    <i class="icon-base bx bx-time-five me-1"></i>Confirm Extension
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ── Modal: Change Driver ── --}}
+<div class="modal fade" id="modal-change-driver" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:36px;height:36px;border-radius:50%;background:rgba(0,207,232,.12);
+                                 display:flex;align-items:center;justify-content:center">
+                        <i class="icon-base bx bx-transfer" style="color:#00cfe8;font-size:1.1rem"></i>
+                    </span>
+                    <h5 class="modal-title mb-0 fw-semibold" style="color:#2c2c5e">Change Driver</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="text-muted mb-3" style="font-size:.88rem">
+                    You are about to assign a new driver to this booking.
+                </p>
+                <div class="rounded-2 p-3 mb-0" style="background:#f8f9fa;font-size:.85rem">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Current Driver</span>
+                        <strong>{{ $driverBooking->driver?->Name }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">New Driver</span>
+                        <strong id="modal-new-driver" style="color:#00cfe8"></strong>
+                    </div>
+                </div>
+                <p class="mt-3 mb-0 text-muted" style="font-size:.82rem">
+                    Both the employee and the new driver will be notified via email.
+                </p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm px-3 py-2"
+                        style="background:#00cfe8;color:#fff;border:none"
+                        onclick="$('#form-change-driver').submit()">
+                    <i class="icon-base bx bx-transfer me-1"></i>Apply Driver Change
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ── Modal: Reschedule ── --}}
+<div class="modal fade" id="modal-reschedule" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:36px;height:36px;border-radius:50%;background:rgba(115,103,240,.12);
+                                 display:flex;align-items:center;justify-content:center">
+                        <i class="icon-base bx bx-calendar-edit" style="color:#7367f0;font-size:1.1rem"></i>
+                    </span>
+                    <h5 class="modal-title mb-0 fw-semibold" style="color:#2c2c5e">Apply Reschedule</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="text-muted mb-3" style="font-size:.88rem">
+                    Please confirm the new schedule for this booking.
+                </p>
+                <div class="rounded-2 p-3 mb-0" style="background:#f8f9fa;font-size:.85rem">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Previous Date</span>
+                        <strong>{{ $driverBooking->scheduled_pickup_date?->format('d M Y') }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Previous Time</span>
+                        <strong>{{ $driverBooking->scheduled_pickup_time?->format('H:i') }}–{{ $driverBooking->scheduled_end_time?->format('H:i') }} WIB</strong>
+                    </div>
+                    <div style="border-top:1px solid #dee2e6;padding-top:.6rem;margin-top:.2rem">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">New Date</span>
+                            <strong id="modal-reschedule-date" style="color:#7367f0"></strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">New Time</span>
+                            <strong id="modal-reschedule-time" style="color:#7367f0"></strong>
+                        </div>
+                    </div>
+                </div>
+                <p class="mt-3 mb-0 text-muted" style="font-size:.82rem">
+                    Driver availability will be validated against the new time slot.
+                    The employee will be notified of the change.
+                </p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary"
+                        onclick="$('#form-reschedule').submit()">
+                    <i class="icon-base bx bx-calendar-edit me-1"></i>Confirm Reschedule
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ── Modal: Force Complete ── --}}
+<div class="modal fade" id="modal-force-complete" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:36px;height:36px;border-radius:50%;background:rgba(0,207,232,.12);
+                                 display:flex;align-items:center;justify-content:center">
+                        <i class="icon-base bx bx-check-double" style="color:#00cfe8;font-size:1.1rem"></i>
+                    </span>
+                    <h5 class="modal-title mb-0 fw-semibold" style="color:#2c2c5e">Force Finish Booking</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <div class="alert alert-warning py-2 mb-3" style="font-size:.82rem">
+                    <i class="icon-base bx bx-error me-1"></i>
+                    <strong>This action cannot be undone.</strong>
+                </div>
+                <div class="rounded-2 p-3 mb-3" style="background:#f8f9fa;font-size:.85rem">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Booking</span>
+                        <strong>{{ $driverBooking->booking_number }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Current Status</span>
+                        <span style="font-weight:600;color:{{ $pill['color'] }}">{{ $pill['label'] }}</span>
+                    </div>
+                </div>
+                <p class="text-muted mb-1" style="font-size:.82rem">The following will happen immediately:</p>
+                <ul class="text-muted mb-0" style="font-size:.82rem;padding-left:1.2rem">
+                    <li>Status changed to <strong>Completed</strong></li>
+                    <li>Completion email sent to the employee (with feedback link)</li>
+                    <li>Completion email sent to the driver</li>
+                </ul>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm px-3 py-2"
+                        style="background:#00cfe8;color:#fff;border:none"
+                        onclick="$('#form-force-complete').submit()">
+                    <i class="icon-base bx bx-check-double me-1"></i>Force Finish Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ── Modal: Cancel Booking ── --}}
+<div class="modal fade" id="modal-cancel" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:36px;height:36px;border-radius:50%;background:rgba(234,84,85,.12);
+                                 display:flex;align-items:center;justify-content:center">
+                        <i class="icon-base bx bx-x-circle" style="color:#ea5455;font-size:1.1rem"></i>
+                    </span>
+                    <h5 class="modal-title mb-0 fw-semibold" style="color:#2c2c5e">Cancel Booking</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ route('admin.driver-bookings.cancel', $driverBooking) }}" method="POST">
+                @csrf @method('PATCH')
+                <div class="modal-body pt-3">
+                    <div class="rounded-2 p-3 mb-3" style="background:#f8f9fa;font-size:.85rem">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Booking</span>
+                            <strong>{{ $driverBooking->booking_number }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Employee</span>
+                            <strong>{{ $driverBooking->user?->Name }}</strong>
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold" style="font-size:.83rem">
+                            Reason for Cancellation <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="cancelation_reason" class="form-control form-control-sm"
+                                  rows="3" placeholder="Explain why this booking is being cancelled..."
+                                  style="font-size:.83rem" required>{{ old('cancelation_reason') }}</textarea>
+                        <div class="text-muted mt-1" style="font-size:.75rem">
+                            The employee will be notified via email with this reason.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Keep Booking</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="icon-base bx bx-x me-1"></i>Cancel Booking
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('script')
@@ -543,24 +836,36 @@ $(document).on('change', 'input[name="driver_nik"]', function () {
     $(this).closest('.bkd-driver-card').addClass('bkd-driver-selected');
 });
 
-// Force complete confirmation
-function confirmForceComplete() {
-    const bookingNumber = @js($driverBooking->booking_number);
-    const currentStatus = @js($driverBooking->status);
+// Extend: capture hours & new end time, then open modal
+$(document).on('click', '.btn-open-extend', function () {
+    const hours = $(this).data('hours');
+    const newEnd = $(this).data('new-end');
+    $('#modal-extend-hours').text('+' + hours + ' hour' + (hours > 1 ? 's' : ''));
+    $('#modal-extend-new-end').text(newEnd + ' WIB');
+    $('#extend-hours-input').val(hours);
+    new bootstrap.Modal(document.getElementById('modal-extend')).show();
+});
 
-    const confirmed = confirm(
-        'Force Finish: ' + bookingNumber + '\n\n' +
-        'Status saat ini: ' + currentStatus.replace(/_/g, ' ').toUpperCase() + '\n\n' +
-        'Tindakan ini akan:\n' +
-        '  • Mengubah status menjadi COMPLETED\n' +
-        '  • Mengirim email notifikasi ke pemohon dan driver\n' +
-        '  • Tidak dapat dibatalkan\n\n' +
-        'Lanjutkan?'
-    );
-
-    if (confirmed) {
-        document.getElementById('forceCompleteForm').submit();
+// Change Driver: show selected driver name in modal
+$('#btn-change-driver').on('click', function () {
+    const $selected = $('input[name="driver_nik"]:checked:not(:disabled)');
+    if (! $selected.length) {
+        alert('Please select an available driver.');
+        return;
     }
-}
+    const name = $selected.data('name') || 'Unknown';
+    $('#modal-new-driver').text(name);
+    new bootstrap.Modal(document.getElementById('modal-change-driver')).show();
+});
+
+// Reschedule: read form values into modal
+$('#btn-reschedule').on('click', function () {
+    const date = $('#input-reschedule-date').val() || '-';
+    const pickup = $('#input-reschedule-pickup').val() || '-';
+    const end = $('#input-reschedule-end').val() || '-';
+    $('#modal-reschedule-date').text(date);
+    $('#modal-reschedule-time').text(pickup + ' – ' + end + ' WIB');
+    new bootstrap.Modal(document.getElementById('modal-reschedule')).show();
+});
 </script>
 @endsection

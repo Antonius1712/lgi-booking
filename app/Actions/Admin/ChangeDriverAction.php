@@ -105,7 +105,6 @@ class ChangeDriverAction
             ->whereNotIn('status', [
                 DriverBookingStatusEnum::CANCELLED->value,
                 DriverBookingStatusEnum::AUTO_CANCELLED->value,
-                DriverBookingStatusEnum::COMPLETED->value,
             ])
             ->where('scheduled_pickup_time', '<', $endTime)
             ->where('scheduled_end_time', '>', $startTime)

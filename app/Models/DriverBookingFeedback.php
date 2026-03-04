@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class DriverBookingFeedback extends Model
 {
+    protected $table = 'driver_booking_feedbacks';
+
     protected $fillable = [
         'driver_booking_id',
         'user_nik',

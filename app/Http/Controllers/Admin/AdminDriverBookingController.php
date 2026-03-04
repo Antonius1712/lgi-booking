@@ -71,6 +71,18 @@ class AdminDriverBookingController extends Controller
         $performers = BookingLog::resolvePerformers($driverBooking->logs);
         $drivers = $this->allDrivers();
 
+        $busyDriverNiks = DriverBooking::query()
+            ->where('scheduled_pickup_date', $driverBooking->scheduled_pickup_date)
+            ->whereNotIn('status', [
+                DriverBookingStatusEnum::CANCELLED->value,
+                DriverBookingStatusEnum::AUTO_CANCELLED->value,
+            ])
+            ->where('scheduled_pickup_time', '<', $driverBooking->scheduled_end_time)
+            ->where('scheduled_end_time', '>', $driverBooking->scheduled_pickup_time)
+            ->where('id', '!=', $driverBooking->id)
+            ->pluck('driver_nik')
+            ->toArray();
+
         $isTerminal = in_array($driverBooking->status, [
             DriverBookingStatusEnum::COMPLETED->value,
             DriverBookingStatusEnum::CANCELLED->value,
@@ -101,7 +113,7 @@ class AdminDriverBookingController extends Controller
         $maxExtensionHours = (int) Setting::get('driver_extension_max_hours', 3);
 
         return view('admin.bookings.driver.show', compact(
-            'driverBooking', 'drivers', 'performers',
+            'driverBooking', 'drivers', 'busyDriverNiks', 'performers',
             'isTerminal', 'isActive',
             'canConfirm', 'canCancel', 'canChange', 'canExtend', 'canReschedule', 'canForceComplete',
             'maxExtensionHours',
@@ -184,13 +196,10 @@ class AdminDriverBookingController extends Controller
             ->whereNotIn('status', [
                 DriverBookingStatusEnum::CANCELLED->value,
                 DriverBookingStatusEnum::AUTO_CANCELLED->value,
-                DriverBookingStatusEnum::COMPLETED->value,
             ])
-            ->where(fn ($q) => $q->whereBetween('scheduled_pickup_time', [$request->time_start, $request->time_end])
-                ->orWhereBetween('scheduled_end_time', [$request->time_start, $request->time_end])
-            )
-            ->when($request->exclude_booking_id, fn ($q) => $q->where('id', '!=', $request->exclude_booking_id)
-            )
+            ->where('scheduled_pickup_time', '<', $request->time_end)
+            ->where('scheduled_end_time', '>', $request->time_start)
+            ->when($request->exclude_booking_id, fn ($q) => $q->where('id', '!=', $request->exclude_booking_id))
             ->pluck('driver_nik')
             ->toArray();
 

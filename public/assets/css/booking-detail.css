@@ -172,6 +172,17 @@
     box-shadow: 0 0 0 2px #7367f0;
 }
 
+.bkd-driver-card.bkd-driver-busy {
+    opacity: .5;
+    cursor: not-allowed;
+    background: #f8f7fa;
+}
+
+.bkd-driver-card.bkd-driver-busy:hover {
+    border-color: #f3f2f7;
+    background: #f8f7fa;
+}
+
 /* ── Audit log timeline ────────────────────────────────── */
 .bkd-log-item {
     display: flex;

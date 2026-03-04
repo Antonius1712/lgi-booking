@@ -28,12 +28,14 @@ class BookingDriverExtensionRequestAction
         }
 
         $durationMinutes = (int) $request->input('duration', 30);
+        $reason = $request->input('reason');
 
         try {
-            DB::transaction(function () use ($booking, $durationMinutes) {
+            DB::transaction(function () use ($booking, $durationMinutes, $reason) {
                 $booking->update([
                     'extention_requested_at' => now(),
                     'extension_duration' => $durationMinutes,
+                    'extension_request_reason' => $reason,
                 ]);
 
                 $booking->log('extension_requested', $booking->status, $booking->status, [
