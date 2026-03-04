@@ -237,6 +237,22 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                             <i class="icon-base bx bx-error me-1"></i>{{ $message }}
                         </div>
                     @enderror
+
+                    {{-- Pending extension request from booker --}}
+                    @if ($driverBooking->extention_requested_at && ! $driverBooking->extension_approved_at)
+                        @php
+                            $reqMins = $driverBooking->extension_duration ?? 0;
+                            $reqLabel = $reqMins >= 60
+                                ? floor($reqMins / 60).'h'.($reqMins % 60 > 0 ? ' '.($reqMins % 60).'m' : '')
+                                : $reqMins.'m';
+                        @endphp
+                        <div class="alert alert-warning py-2 mb-3" style="font-size:.82rem">
+                            <i class="icon-base bx bx-bell me-1"></i>
+                            <strong>Booker requested extension:</strong>
+                            +{{ $reqLabel }} — diminta pada {{ \Carbon\Carbon::parse($driverBooking->extention_requested_at)->format('H:i, d M Y') }}
+                        </div>
+                    @endif
+
                     <p class="small mb-3 text-muted">
                         Current end time:
                         <strong>{{ $driverBooking->scheduled_end_time?->format('H:i') }} WIB</strong>.
@@ -245,7 +261,7 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                     <form action="{{ route('admin.driver-bookings.extend', $driverBooking) }}" method="POST">
                         @csrf @method('PATCH')
                         <div class="d-flex gap-2 flex-wrap">
-                            @foreach ([1, 2, 3] as $h)
+                            @foreach (range(1, $maxExtensionHours) as $h)
                                 @php
                                     $newEnd = $driverBooking->scheduled_end_time?->copy()->addHours($h)->format('H:i');
                                 @endphp
@@ -366,6 +382,38 @@ $pill = $pillMap[$driverBooking->status] ?? ['color' => '#82868b', 'label' => uc
                         <button type="submit" class="btn btn-primary btn-sm"
                                 onclick="return confirm('Reschedule this booking? The driver will be notified.')">
                             <i class="icon-base bx bx-calendar-edit me-1"></i>Apply Reschedule
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endif
+
+        {{-- ── FORCE COMPLETE ── --}}
+        @if ($canForceComplete)
+            <div class="card border-0 border-start border-3 rounded-3 mb-3" style="border-color:#00cfe8!important">
+                <div class="d-flex align-items-center gap-2 border-bottom rounded-top py-3 px-3"
+                     style="background:rgba(0,207,232,.08);border-color:rgba(0,207,232,.2)!important">
+                    <i class="icon-base bx bx-check-double" style="color:#00cfe8"></i>
+                    <h6 class="mb-0 fw-semibold">Force Finish Booking</h6>
+                </div>
+                <div class="card-body">
+                    @error('force_complete')
+                        <div class="alert alert-danger py-2 mb-3" style="font-size:.82rem">
+                            <i class="icon-base bx bx-error me-1"></i>{{ $message }}
+                        </div>
+                    @enderror
+                    <p class="small mb-3 text-muted">
+                        Immediately mark this booking as <strong>Completed</strong> regardless of its current status.
+                        Emails will be sent to the booker (with feedback link) and driver.
+                        <strong class="text-danger">This action cannot be undone.</strong>
+                    </p>
+                    <form action="{{ route('admin.driver-bookings.force-complete', $driverBooking) }}" method="POST"
+                          id="forceCompleteForm">
+                        @csrf @method('PATCH')
+                        <button type="button" class="btn btn-sm"
+                                style="background:#00cfe8;color:#fff;border:none"
+                                onclick="confirmForceComplete()">
+                            <i class="icon-base bx bx-check-double me-1"></i>Force Finish Now
                         </button>
                     </form>
                 </div>
@@ -494,5 +542,25 @@ $(document).on('change', 'input[name="driver_nik"]', function () {
     $('#driver-grid .bkd-driver-card').removeClass('bkd-driver-selected');
     $(this).closest('.bkd-driver-card').addClass('bkd-driver-selected');
 });
+
+// Force complete confirmation
+function confirmForceComplete() {
+    const bookingNumber = @js($driverBooking->booking_number);
+    const currentStatus = @js($driverBooking->status);
+
+    const confirmed = confirm(
+        'Force Finish: ' + bookingNumber + '\n\n' +
+        'Status saat ini: ' + currentStatus.replace(/_/g, ' ').toUpperCase() + '\n\n' +
+        'Tindakan ini akan:\n' +
+        '  • Mengubah status menjadi COMPLETED\n' +
+        '  • Mengirim email notifikasi ke pemohon dan driver\n' +
+        '  • Tidak dapat dibatalkan\n\n' +
+        'Lanjutkan?'
+    );
+
+    if (confirmed) {
+        document.getElementById('forceCompleteForm').submit();
+    }
+}
 </script>
 @endsection

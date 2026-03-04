@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasBookingLogs;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class DriverBooking extends Model
 {
@@ -87,6 +88,11 @@ class DriverBooking extends Model
     public function driver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'driver_nik', 'NIK');
+    }
+
+    public function feedback(): HasOne
+    {
+        return $this->hasOne(DriverBookingFeedback::class);
     }
 
     public static function generateBookingNumber(): string

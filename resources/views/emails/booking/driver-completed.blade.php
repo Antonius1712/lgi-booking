@@ -1,14 +1,21 @@
 <x-emails.layouts.base
-    title="Konfirmasi Perjalanan anda berakhir!"
+    title="{{ $recipientRole === 'booker' ? 'Perjalanan Anda Telah Selesai' : 'Konfirmasi Perjalanan Selesai' }}"
     accentColor="#fd7e14"
 >
     <p style="margin:0 0 16px; font-size:15px; color:#343a40; line-height:1.6;">
         Yth. <strong>{{ $recipientRole === 'booker' ? $booking->user?->Name ?? 'Pengguna' : $booking->driver?->Name ?? 'Driver' }}</strong>,
     </p>
 
-    <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
-        Kami informasikan bahwa perjalanan Anda telah <strong>berakhir</strong>.
-    </p>
+    @if ($recipientRole === 'booker')
+        <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
+            Perjalanan Anda telah <strong>selesai</strong>. Terima kasih telah menggunakan layanan driver kami.
+            Mohon kesediaannya untuk memberikan ulasan perjalanan Anda.
+        </p>
+    @else
+        <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
+            Perjalanan telah <strong>selesai</strong> dan tercatat dalam sistem. Terima kasih atas dedikasi Anda.
+        </p>
+    @endif
 
     {{-- Booking Detail Table --}}
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:24px; border-radius:6px; overflow:hidden; border: 1px solid #dee2e6;">
@@ -41,19 +48,21 @@
         </tr>
     </table>
 
-    <p style="margin:0 0 20px; font-size:14px; color:#343a40; line-height:1.6; text-align:center;">
-        Terima kasih telah melakukan pemesanan ini! Mohon kesediaannya memberikan kesan dan pesan perjalanan Anda.
-    </p>
-
-    {{-- CTA Button --}}
-    <table width="100%" cellpadding="0" cellspacing="0">
-        <tr>
-            <td align="center">
-                <a href="{{ route('home') }}"
-                   style="display:inline-block; background-color:#6c757d; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:6px; font-size:14px; font-weight:700;">
-                    Berikan Ulasan
-                </a>
-            </td>
-        </tr>
-    </table>
+    @if ($recipientRole === 'booker')
+        {{-- CTA Button for booker --}}
+        <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+                <td align="center">
+                    <a href="{{ route('feedback.driver.create', $booking) }}"
+                       style="display:inline-block; background-color:#fd7e14; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:6px; font-size:14px; font-weight:700;">
+                        Berikan Ulasan
+                    </a>
+                </td>
+            </tr>
+        </table>
+    @else
+        <p style="margin:0; font-size:14px; color:#6c757d; line-height:1.6; text-align:center;">
+            Semoga hari Anda menyenangkan. Sampai jumpa di perjalanan berikutnya!
+        </p>
+    @endif
 </x-emails.layouts.base>

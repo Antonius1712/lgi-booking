@@ -214,6 +214,15 @@
                                 @endif
                                 {{ $pill['l'] }}
                             </span>
+                            @if ($booking->extention_requested_at && ! $booking->extension_approved_at)
+                                <br>
+                                <span style="display:inline-flex;align-items:center;gap:3px;
+                                             font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:20px;
+                                             background:rgba(255,159,67,.15);color:#ff9f43;margin-top:3px">
+                                    <i class="icon-base bx bx-bell" style="font-size:.75rem"></i>
+                                    Ext. Pending
+                                </span>
+                            @endif
                         </td>
 
                         {{-- Actions --}}

@@ -36,19 +36,29 @@
                 </a>
             </li>
 
-            <li class="menu-item {{ request()->segment(2) === 'meeting-rooms' ? 'active' : null }}">
-                <a href="{{ route('admin.meeting-rooms.index') }}" class="menu-link">
-                    <i class="menu-icon icon-base bx bx-door-open"></i>
-                    <div data-i18n="Setting Meeting Room">Setting Meeting Room</div>
+            <li class="menu-item {{ request()->segment(2) === 'meeting-rooms' || request()->segment(2) === 'drivers' ? 'active open' : null }}">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon icon-base bx bx-cog"></i>
+                    <div data-i18n="Settings">Settings</div>
                 </a>
+                <ul class="menu-sub">
+                    <li class="menu-item {{ request()->segment(2) === 'meeting-rooms' ? 'active' : null }}">
+                        <a href="{{ route('admin.meeting-rooms.index') }}" class="menu-link">
+                            <i class="menu-icon icon-base bx bx-door-open"></i>
+                            <div data-i18n="Setting Meeting Room">Setting Meeting Room</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->segment(2) === 'drivers' ? 'active' : null }}">
+                        <a href="{{ route('admin.drivers.index') }}" class="menu-link">
+                            <i class="menu-icon icon-base bx bx-car"></i>
+                            <div data-i18n="Setting Driver">Setting Driver</div>
+                        </a>
+                    </li>
+                </ul>
             </li>
 
-            <li class="menu-item {{ request()->segment(2) === 'drivers' ? 'active' : null }}">
-                <a href="{{ route('admin.drivers.index') }}" class="menu-link">
-                    <i class="menu-icon icon-base bx bx-car"></i>
-                    <div data-i18n="Setting Driver">Setting Driver</div>
-                </a>
-            </li>
+            
 
             <li class="menu-item {{ request()->segment(2) === 'driver-bookings' || request()->segment(2) === 'meeting-room-bookings' ? 'active open' : null }}">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -69,12 +79,12 @@
                 </ul>
             </li>
 
-            <li class="menu-item {{ request()->segment(2) === 'email-templates' ? 'active' : null }}">
+            {{-- <li class="menu-item {{ request()->segment(2) === 'email-templates' ? 'active' : null }}">
                 <a href="{{ route('admin.email-templates.index') }}" class="menu-link">
                     <i class="menu-icon icon-base bx bx-envelope"></i>
                     <div data-i18n="Email Templates">Email Templates</div>
                 </a>
-            </li>
+            </li> --}}
 
             <li class="menu-item {{ request()->segment(2) === 'settings' ? 'active' : null }}">
                 <a href="{{ route('admin.settings.index') }}" class="menu-link">

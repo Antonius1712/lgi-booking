@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\MeetingRoomController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\BookingDriverController;
 use App\Http\Controllers\BookingMeetingController;
+use App\Http\Controllers\DriverBookingFeedbackController;
 use App\Http\Controllers\DriverTripController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MyBookingDriverController;
@@ -62,6 +63,7 @@ Route::middleware(['auth'])->group(function () {
             Route::patch('/cancel/{driverBooking}', [AdminDriverBookingController::class, 'cancel'])->name('cancel');
             Route::patch('/change-driver/{driverBooking}', [AdminDriverBookingController::class, 'changeDriver'])->name('change-driver');
             Route::patch('/extend/{driverBooking}', [AdminDriverBookingController::class, 'extend'])->name('extend');
+            Route::patch('/force-complete/{driverBooking}', [AdminDriverBookingController::class, 'forceComplete'])->name('force-complete');
             Route::patch('/reschedule/{driverBooking}', [AdminDriverBookingController::class, 'reschedule'])->name('reschedule');
         });
 
@@ -93,12 +95,20 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::prefix('driver/trips')->as('driver.trips.')->group(function () {
+        Route::patch('/{driverBooking}/depart', [DriverTripController::class, 'depart'])->name('depart');
+        Route::patch('/{driverBooking}/complete', [DriverTripController::class, 'complete'])->name('complete');
         Route::patch('/{driverBooking}/remind', [DriverTripController::class, 'remind'])->name('remind');
         Route::patch('/{driverBooking}/cancel', [DriverTripController::class, 'cancel'])->name('cancel');
     });
 
+    Route::prefix('feedback')->as('feedback.')->group(function () {
+        Route::get('/driver/{driverBooking}', [DriverBookingFeedbackController::class, 'create'])->name('driver.create');
+        Route::post('/driver/{driverBooking}', [DriverBookingFeedbackController::class, 'store'])->name('driver.store');
+    });
+
     Route::prefix('my-booking')->as('my-booking.')->group(function () {
         Route::get('/driver', [MyBookingDriverController::class, 'index'])->name('driver');
+        Route::patch('/driver/{driverBooking}/extension-request', [MyBookingDriverController::class, 'requestExtension'])->name('driver.extension-request');
         Route::get('/meeting-room', [MyBookingMeetingRoomController::class, 'index'])->name('meeting-room');
     });
 

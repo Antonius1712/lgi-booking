@@ -1,14 +1,22 @@
 <x-emails.layouts.base
-    title="Konfirmasi penambahan waktu perjalanan anda!"
+    title="{{ $recipientRole === 'driver' ? 'Anda Memiliki Perpanjangan Waktu Perjalanan' : 'Permintaan Perpanjangan Waktu Anda Disetujui' }}"
     accentColor="#fd7e14"
 >
     <p style="margin:0 0 16px; font-size:15px; color:#343a40; line-height:1.6;">
         Yth. <strong>{{ $recipientRole === 'booker' ? $booking->user?->Name ?? 'Pengguna' : $booking->driver?->Name ?? 'Driver' }}</strong>,
     </p>
 
-    <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
-        Kami informasikan bahwa perjalanan Anda telah berhasil dilakukan <strong>perpanjangan</strong>.
-    </p>
+    @if ($recipientRole === 'booker')
+        <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
+            Permintaan <strong>perpanjangan waktu</strong> perjalanan Anda telah <strong style="color:#fd7e14">disetujui</strong> oleh admin.
+            Waktu selesai perjalanan telah diperbarui.
+        </p>
+    @else
+        <p style="margin:0 0 20px; font-size:15px; color:#343a40; line-height:1.6;">
+            Anda memiliki <strong>perpanjangan waktu</strong> untuk perjalanan ini.
+            Harap perhatikan waktu selesai yang telah diperbarui di bawah.
+        </p>
+    @endif
 
     {{-- Booking Detail Table --}}
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:24px; border-radius:6px; overflow:hidden; border: 1px solid #dee2e6;">
@@ -38,6 +46,18 @@
         <tr>
             <td style="padding:12px 16px; font-size:14px; color:#6c757d;">Keperluan</td>
             <td style="padding:12px 16px; font-size:14px; color:#212529; font-weight:600;">{{ $booking->purpose_of_trip ?? '-' }}</td>
+        </tr>
+    </table>
+
+    {{-- Highlighted new end time --}}
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fff3e0; border:1px solid #fd7e14; border-radius:6px; margin-bottom:24px;">
+        <tr>
+            <td style="padding:14px 16px; text-align:center;">
+                <p style="margin:0; font-size:13px; color:#a04a00; font-weight:700;">&#10003; Waktu Selesai Baru</p>
+                <p style="margin:4px 0 0; font-size:20px; font-weight:700; color:#a04a00;">
+                    {{ \Carbon\Carbon::parse($booking->scheduled_end_time)->format('H:i') }} WIB
+                </p>
+            </td>
         </tr>
     </table>
 

@@ -6,6 +6,7 @@ use App\Actions\Admin\CancelDriverBookingAction;
 use App\Actions\Admin\ChangeDriverAction;
 use App\Actions\Admin\ConfirmDriverBookingAction;
 use App\Actions\Admin\ExtendDriverBookingAction;
+use App\Actions\Admin\ForceCompleteDriverBookingAction;
 use App\Actions\Admin\RescheduleDriverBookingAction;
 use App\Enums\DriverBookingStatusEnum;
 use App\Enums\RoleEnum;
@@ -16,6 +17,7 @@ use App\Http\Requests\Admin\ExtendDriverBookingRequest;
 use App\Http\Requests\Admin\RescheduleDriverBookingRequest;
 use App\Models\BookingLog;
 use App\Models\DriverBooking;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -94,11 +96,15 @@ class AdminDriverBookingController extends Controller
         $canChange = ! $isTerminal && ! $isActive;
         $canExtend = $isActive;
         $canReschedule = ! $isTerminal && ! $isActive;
+        $canForceComplete = ! $isTerminal;
+
+        $maxExtensionHours = (int) Setting::get('driver_extension_max_hours', 3);
 
         return view('admin.bookings.driver.show', compact(
             'driverBooking', 'drivers', 'performers',
             'isTerminal', 'isActive',
-            'canConfirm', 'canCancel', 'canChange', 'canExtend', 'canReschedule',
+            'canConfirm', 'canCancel', 'canChange', 'canExtend', 'canReschedule', 'canForceComplete',
+            'maxExtensionHours',
         ));
     }
 
@@ -140,6 +146,16 @@ class AdminDriverBookingController extends Controller
 
         return redirect()->route('admin.driver-bookings.show', $driverBooking)
             ->with('success', "Trip extended. New end time: {$driverBooking->fresh()->scheduled_end_time} WIB.");
+    }
+
+    // ── Force Complete ────────────────────────────────────────────────
+
+    public function forceComplete(DriverBooking $driverBooking, ForceCompleteDriverBookingAction $action): RedirectResponse
+    {
+        $action->handle($driverBooking);
+
+        return redirect()->route('admin.driver-bookings.show', $driverBooking)
+            ->with('success', "Booking {$driverBooking->booking_number} has been force-completed.");
     }
 
     // ── Reschedule ────────────────────────────────────────────────────

@@ -110,6 +110,15 @@
                     target="_blank" class="home-btn-nav">
                     <i class="icon-base bx bx-map me-1"></i> Open Maps
                 </a>
+                @if ($endsIn <= 0)
+                <form method="POST" action="{{ route('driver.trips.complete', $activeTrip) }}"
+                      onsubmit="return confirm('Konfirmasi bahwa perjalanan ini telah selesai?')">
+                    @csrf @method('PATCH')
+                    <button type="submit" class="btn btn-success" style="flex:1;justify-content:center">
+                        <i class="icon-base bx bx-check-circle me-1"></i> Selesai
+                    </button>
+                </form>
+                @endif
             </div>
         </div>
         @endif
@@ -182,6 +191,15 @@
                     ? floor($startsIn/60).'h '.($startsIn%60).'m'
                     : $startsIn.'m' }}
                 </span>
+
+                <form method="POST" action="{{ route('driver.trips.depart', $trip) }}"
+                    onsubmit="return confirm('Konfirmasi keberangkatan untuk booking ini?')">
+                    @csrf
+                    @method('PATCH')
+                    <button type="submit" class="btn btn-success">
+                        <i class="icon-base bx bx-check-circle me-1"></i> Confirm Departure
+                    </button>
+                </form>
 
                 @if ($trip->reminder_count >= 3)
                     <form method="POST" action="{{ route('driver.trips.cancel', $trip) }}"

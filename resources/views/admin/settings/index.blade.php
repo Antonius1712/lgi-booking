@@ -77,6 +77,50 @@
             </div>
         </div>
     </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="icon-base bx bx-time-five" style="color:#fd7e14;font-size:1.1rem"></i>
+                    <h6 class="mb-0 fw-semibold">Driver Trip Extension</h6>
+                </div>
+                <p class="text-muted mb-0 mt-1" style="font-size:.8rem">
+                    Set the maximum number of hours admin can extend an active driver trip.
+                </p>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('admin.settings.update') }}" method="POST">
+                    @csrf @method('PUT')
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold" style="font-size:.83rem">
+                            Max Extension Hours
+                        </label>
+                        <div class="input-group" style="max-width:250px">
+                            <select name="driver_extension_max_hours"
+                                    class="form-select @error('driver_extension_max_hours') is-invalid @enderror">
+                                @for ($h = 1; $h <= 24; $h++)
+                                    <option value="{{ $h }}" {{ (int) $extensionMaxHours === $h ? 'selected' : '' }}>
+                                        {{ $h }} {{ $h === 1 ? 'hour' : 'hours' }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+                        @error('driver_extension_max_hours')
+                            <div class="text-danger mt-1" style="font-size:.78rem">{{ $message }}</div>
+                        @enderror
+                        <div class="text-muted mt-1" style="font-size:.75rem">
+                            Admin will see extension options from <strong>1h</strong> up to <strong>{{ $extensionMaxHours }}h</strong>.
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="icon-base bx bx-save me-1"></i>Save Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 @endsection

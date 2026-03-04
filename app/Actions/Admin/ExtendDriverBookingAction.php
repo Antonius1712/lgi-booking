@@ -4,11 +4,13 @@ namespace App\Actions\Admin;
 
 use App\Enums\DriverBookingStatusEnum;
 use App\Http\Requests\Admin\ExtendDriverBookingRequest;
+use App\Mail\BookingDriverExtendedMail;
 use App\Models\DriverBooking;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class ExtendDriverBookingAction
@@ -56,6 +58,7 @@ class ExtendDriverBookingAction
                     'scheduled_end_time' => $newEnd->format('H:i:s'),
                     'scheduled_duration' => $driverBooking->scheduled_duration + ($hours * 60),
                     'status' => DriverBookingStatusEnum::EXTENDING->value,
+                    'extension_approved_at' => now(),
                 ]);
 
                 $driverBooking->log(
@@ -64,10 +67,18 @@ class ExtendDriverBookingAction
                 );
             });
 
-            // TODO: SendExtensionApprovedEmail::dispatch($driverBooking->fresh());
+            $this->sendNotifications($driverBooking->fresh());
         } catch (Exception $e) {
             Log::error($e->getMessage());
             throw $e;
         }
+    }
+
+    private function sendNotifications(DriverBooking $booking): void
+    {
+        $testingEmail = 'it-dba07@lgi.co.id';
+
+        Mail::to($testingEmail)->queue(new BookingDriverExtendedMail($booking, 'booker'));
+        Mail::to($testingEmail)->queue(new BookingDriverExtendedMail($booking, 'driver'));
     }
 }
